@@ -1,6 +1,7 @@
 This file shows everything I worked on during that current workday.
 
 ENTRY FORMAT:
+
 DATE: 
 HOURS:
 DESCRIPTION:
@@ -10,3 +11,9 @@ DATE: 10/15/2024
 HOURS: 1.5
 DESCRIPTION: Worked on the payroll_spreadsheet.py class, edit page format and worked on each input frame->option menu choice, added pages reset function and exit pop-up dialog.
 TO DO: Need to finish the option menu chioce responsivness, add a button to upload and test edge cases: reset each menu input whwen a choice is selected.
+
+
+DATE: 10/16/2024
+HOURS: 1.5
+DESCRIPTION: Updated code on github- now updates can be saved on the cloud. Completed option menu responsiveness and added a button to download payschedules.
+TO DO: Work on the doewnload button- make a new class for backend? use code from .ipynb, and add a progress bar?

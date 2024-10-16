@@ -61,6 +61,12 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.year2_label.pack(pady=10)
         self.year2_label.pack_forget()
 
+
+        self.download_pay_button = ctk.CTkButton(input_frame,text="Load Pay Schedules", command=self.download_pay_schedules)
+        self.download_pay_button.pack(pady=10)
+        self.download_pay_button.pack_forget()
+
+
     def optionmenu_callback(self, choice):
         print("Option selected:", choice)
 
@@ -73,10 +79,12 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.entry_second_half.pack_forget()
             self.year1_label.pack_forget()
             self.year2_label.pack_forget()
+            self.download_pay_button.pack_forget()
 
         elif choice == "Automatic":
             self.option_menu_selection_reset()
             self.has_unsaved_changes = True
+            self.download_pay_button.pack(pady=10)  
             pass  # No need to show any entries
 
         elif choice == "URL":
@@ -89,12 +97,21 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.entry_second_half.configure(placeholder_text="Enter URL for Year 2 of FY (Jan-Jun):")
             self.entry_second_half.pack(pady=10)
 
+            self.download_pay_button.pack(pady=10) 
+
 
         elif choice == "Upload":
             self.option_menu_selection_reset()
             self.has_unsaved_changes = True
             self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.year1_label) 
             self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.year2_label)  # Call the file upload function
+
+            self.download_pay_button.pack(pady=10) 
+
+
+    def download_pay_schedules(self):
+        # Logic to handle the download process (e.g., save a file, request from server)
+        messagebox.showinfo("Download", "Downloading pay schedules...")    
 
     def upload_file(self, text, label):
         # Open a file dialog to allow the user to upload a file
@@ -127,6 +144,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         
         self.year2_label.pack_forget()  # Hide the Year 2 label
         self.year2_label.configure(text="Year 2 of FY (Jan-Jun):")  # Reset the label text
+
+        self.download_pay_button.pack_forget()
 
 
     def reset_and_back(self):

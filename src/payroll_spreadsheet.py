@@ -27,6 +27,19 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         input_frame.pack(side=ctk.LEFT, padx=20, pady=20)
         input_frame.pack_propagate(False)
 
+        #Label and Input for the Master Data Input sheet
+        input_label = ctk.CTkLabel(input_frame, text="Master Data Input Sheet Upload:")
+        input_label.pack(pady=10)
+
+        self.master_data_input_sheet_label = ctk.CTkLabel(input_frame, text="")
+        self.master_data_input_sheet_label.pack(pady=10)
+        #self.master_data_input_sheet_label.pack_forget()
+
+        self.master_data_input_sheet_button = ctk.CTkButton(input_frame,text="Upload master Data Input Sheet", command=self.upload_master_data_input)
+        self.master_data_input_sheet_button.pack(pady=10)
+    
+        
+
         # Add content to the input_frame
         input_label = ctk.CTkLabel(input_frame, text="Select Payschedule Load Method:")
         input_label.pack(pady=10)
@@ -60,7 +73,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.year2_label = ctk.CTkLabel(input_frame, text="Year 2 of FY (Jan-Jun):")
         self.year2_label.pack(pady=10)
         self.year2_label.pack_forget()
-
 
         self.download_pay_button = ctk.CTkButton(input_frame,text="Load Pay Schedules", command=self.download_pay_schedules)
         self.download_pay_button.pack(pady=10)
@@ -108,6 +120,14 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
             self.download_pay_button.pack(pady=10) 
 
+    def upload_master_data_input(self):
+        self.master_data_input_sheet_label.configure("Upload Master Data Input Sheet:")
+        self.has_unsaved_changes = True
+        self.upload_file("Select the Master Data Input Sheet", self.master_data_input_sheet_label)
+        self.master_data_input_sheet_button.configure(text="Re-upload Master Data Input Sheet")
+
+
+
 
     def download_pay_schedules(self):
         # Logic to handle the download process (e.g., save a file, request from server)
@@ -132,7 +152,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         else:
             self.reset_and_back()
 
-    
+    #Function to reset all the option menu fields to its original state while choosing options
     def option_menu_selection_reset(self):
         self.entry_first_half.pack_forget()  # Hide the entry for the first half
         self.entry_first_half.delete(0, 'end')  # Clear the entry text
@@ -148,8 +168,15 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.download_pay_button.pack_forget()
 
 
+    # Reset page to its original state 
     def reset_and_back(self):
         # Reset all fields and labels
+
+        # Master Data Input Field
+        self.master_data_input_sheet_label.configure(text="")
+        self.master_data_input_sheet_button.configure(text="Upload Master Data Input Sheet")# Upload button
+
+        # Option Menu Field
         self.optionmenu_var.set("Select an option")  # Reset option menu
         self.entry_first_half.pack_forget()  # Hide the entry for the first half
         self.entry_first_half.delete(0, 'end')  # Clear the entry text

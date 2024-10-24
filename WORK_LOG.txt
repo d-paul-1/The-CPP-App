@@ -12,8 +12,18 @@ HOURS: 1.5
 DESCRIPTION: Worked on the payroll_spreadsheet.py class, edit page format and worked on each input frame->option menu choice, added pages reset function and exit pop-up dialog.
 TO DO: Need to finish the option menu chioce responsivness, add a button to upload and test edge cases: reset each menu input whwen a choice is selected.
 
-
 DATE: 10/16/2024
 HOURS: 1.5
 DESCRIPTION: Updated code on github- now updates can be saved on the cloud. Completed option menu responsiveness and added a button to download payschedules.
 TO DO: Work on the doewnload button- make a new class for backend? use code from .ipynb, and add a progress bar?
+
+DATE: 10/23/2024
+HOURS: 1.5(unoffical)
+DESCRIPTION: Added master data input sheet inputs in the payroll page and made skeleton code for payroll processinf .py
+TO DO: complete function implementation for payroll_processing.py
+
+DATE: 10/24/2024
+HOURS: 3
+DESCRIPTION: worked on payroroll processing functions, the code now properly downloads the pay schedule and asves it in the pay_schedules folder.
+TO DO: completes the payroll processing functions and add error handling to all of the methods, FIX THE CIRCULAR IMPORT PROBLEM.
+

@@ -109,6 +109,11 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         #self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
 
+        # Initialize progress bar
+        self.progress_bar = ctk.CTkProgressBar(input_frame)
+        self.progress_bar.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=10)
+        self.progress_bar.set(0)  # Start at 0%
+
 
     def optionmenu_callback(self, choice):
         print("Option selected:", choice)
@@ -177,11 +182,12 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             year1 = self.automatic_entry_year1.get()
             year2 = self.automatic_entry_year2.get()
 
-            self.pay_schedules_df=pp.merge_dfs(pp.process_automatic(year1),pp.process_automatic(year2))
+            self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_automatic(year1),self.process_automatic(year2))
+            self.display_msg(msg, color)
+            self.display_dataframe(self.pay_schedules_df)
 
 
-        # Logic to handle the download process (e.g., save a file, request from server)
-        messagebox.showinfo("Download", "Downloading pay schedules...")    
+       
 
     def upload_file(self, text, label):
         # Open a file dialog to allow the user to upload a file
@@ -255,10 +261,86 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.controller.show_frame("SpreadsheetGenerator")  # Navigate back to the previous frame
 
     
-    def display_msg(self,error_msg):
-        self.msg_label = ctk.CTkLabel(self, text=error_msg, text_color="red")
-        self.msg_label.pack(pady=10)
+    def display_msg(self, msg, color):
+        # If a message label already exists, update its text and color
+        if self.msg_label:
+            self.msg_label.configure(text=msg, text_color=color, fg_color = "#FFFFFF")
+        else:
+            # Create the message label only if it doesn't exist
+            self.msg_label = ctk.CTkLabel(self, text=msg, text_color=color , fg_color = "#FFFFFF")
+            # Pack at the bottom center
+            self.msg_label.pack(side="bottom", pady=10)
 
-        # Remove the error message after 5 seconds
+        # Remove the message after 5 seconds
         self.after(5000, self.clear_error_message)
+
+    
+    # Function to return df for the Automatic choice in Option Menu
+    def process_automatic(self, year):
+        total_steps=5
+        try:
+            # Construct URL
+            url, msg, color = pp.construct_url(year)
+            self.display_msg(msg, color)
+
+            # Check for error in URL construction
+            if color == "red":
+                raise Exception("Error constructing URL. Please re-enter the year.")
+            self.update_progress(1, total_steps)
+
+            # Download PDF
+            pdf, msg, color = pp.download_pdf(url)
+            self.display_msg(msg, color)
+
+            # Check for error in downloading PDF
+            if color == "red":
+                raise Exception("Error downloading PDF. Please re-enter the year.")
+            self.update_progress(2, total_steps)
+
+            # Convert PDF to Word
+            word, msg, color = pp.pdf_to_word(pdf)
+            self.display_msg(msg, color)
+
+            # Check for error in converting PDF to Word
+            if color == "red":
+                raise Exception("Error converting PDF to Word. Please re-enter the year.")
+            self.update_progress(3, total_steps)
+
+            # Convert Word to DataFrame
+            df, msg, color = pp.word_to_df(word)
+            self.display_msg(msg, color)
+
+            # Check for error in converting Word to DataFrame
+            if color == "red":
+                raise Exception("Error converting Word to DataFrame. Please re-enter the year.")
+            self.update_progress(4, total_steps)
+
+            return df  # Return the DataFrame if everything was successful
+
+        except Exception as e:
+            self.display_msg(str(e), "red")  # Display the error message in red
+            return None  # Return None to indicate failure
+
+
+    def clear_error_message(self):
+        """Clear the error message after 5 seconds."""
+        if self.msg_label:
+            self.msg_label.destroy()
+            self.msg_label= None
+
+
+
+    def display_dataframe(self, df):
+        if df is not None and not df.empty:
+            df_string = df.to_string(index=False)  # Convert DataFrame to string without the index
+            messagebox.showinfo("DataFrame", df_string)  # Show DataFrame in a message box
+        else:
+            messagebox.showinfo("DataFrame", "The DataFrame is empty or None.")  # Handle empty DataFrame
+
+
+    def update_progress(self, step, total_steps):
+        # Update the progress bar
+        self.progress_bar.set(step / total_steps)
+        self.update()  # Update the UI
+
 

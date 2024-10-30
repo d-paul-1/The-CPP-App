@@ -27,3 +27,10 @@ HOURS: 3
 DESCRIPTION: worked on payroroll processing functions, the code now properly downloads the pay schedule and asves it in the pay_schedules folder.
 TO DO: completes the payroll processing functions and add error handling to all of the methods, FIX THE CIRCULAR IMPORT PROBLEM.
 
+
+DATE: 10/30/2024
+HOURS: 2.5
+DESCRIPTION: Completed the df_merge, and add a progress bar , df merges correctly
+TO DO: Need to CLEAN UP CODE (HIGHLY MESSY), need to test GUI and error handling, complete process function for url and manual. A BUG - the process bar goes back 
+beacuse of year 1 and 2 individual being called in procees i need to fix that 
+

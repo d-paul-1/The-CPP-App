@@ -4,6 +4,7 @@ import payroll_processing as pp
 import pandas as pd
 import os
 import requests
+import openpyxl
 
 class PayrollSpreadsheet(ctk.CTkFrame):
 
@@ -17,15 +18,35 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.master_data_input_sheet_path = None  # Store the path for the master data input sheet
         self.pay_schedules_df = pd.DataFrame()  # Store the path for Year 1 of the pay schedule
         self.pay_periods = 0
+        self.options_state =None # Variable that tracks which option from the option menu was selected
 
-        # Variable to dislay and proceesing status messages
-        self.msg_label = None
-        
-        # Variable that tracks which option from the option menu was selected
-        self.options_state =None
+        # Making the page
+        self.build_page()
         
 
-        # Create a header frame
+
+    def build_page(self):
+        """This Function Builds all the Page frames
+        """
+        # Generating the Header Frame
+        self.generate_header_frame()
+
+        # Generating the Input Frame
+        self.generate_input_frame()
+        
+        # Generating the Display Frame
+        self.generate_display_frame()
+
+        # Generating the Status Frame
+        self.generate_status_frame()
+
+
+
+    def generate_header_frame(self):
+        """This Function Creates the Header Frame along with its relevant widgets
+        """
+
+        # Header Frame
         header_frame = ctk.CTkFrame(self)
         header_frame.pack(side=ctk.TOP, fill="x")
 
@@ -34,16 +55,22 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         label.pack(expand=True, anchor='center')
 
         # Back button to navigate to the previous frame
-        back_button = ctk.CTkButton(header_frame, text="Back to Spreadsheet Generator",
-                                     command=self.confirm_exit)
+        back_button = ctk.CTkButton(header_frame, text="Back to Spreadsheet Generator", command=self.confirm_exit)
         back_button.pack(side=ctk.RIGHT, padx=10, pady=10)
 
-        # Create a frame to hold inputs
+
+
+    def generate_input_frame(self):
+        """This Function Creates the Input Frame along with its relevant widgets
+        """
+
+        # Input Frame
         input_frame = ctk.CTkFrame(self, width=300, height=2000)
         input_frame.pack(side=ctk.LEFT, padx=20, pady=20)
         input_frame.pack_propagate(False)
 
-        #Label and Input for the Master Data Input sheet
+
+        # Master Data Input sheet
         input_label = ctk.CTkLabel(input_frame, text="Master Data Input Sheet Upload:")
         input_label.pack(pady=10)
 
@@ -54,16 +81,18 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         # Button to Upload Master Data Input Sheet
         self.master_data_input_sheet_button = ctk.CTkButton(input_frame,text="Upload master Data Input Sheet", command=self.upload_master_data_input)
         self.master_data_input_sheet_button.pack(pady=10)
-    
 
-        # Add content to the input_frame
+
+
+
+        # Payschedule Input Label
         input_label = ctk.CTkLabel(input_frame, text="Select Payschedule Load Method:")
         input_label.pack(pady=10)
 
         # Define a variable for the option menu
         self.optionmenu_var = ctk.StringVar(value="Select an option")
 
-        #   Option Menu for Payschedule Load mathods
+        # Option Menu for Payschedule Load mathods
         optionmenu = ctk.CTkOptionMenu(
             input_frame,
             variable=self.optionmenu_var,
@@ -107,12 +136,84 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.download_pay_button.pack(pady=10)
         self.download_pay_button.pack_forget()
 
-        #self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
+        self.pay_periods_label=ctk.CTkLabel(input_frame, text = "")
+        self.pay_periods_label.pack(pady=10)
+        self.pay_periods_label.pack_forget()
 
         # Initialize progress bar
         self.progress_bar = ctk.CTkProgressBar(input_frame)
         self.progress_bar.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=10)
         self.progress_bar.set(0)  # Start at 0%
+
+
+
+    def generate_display_frame(self):
+        """This Function Creates the Display Frame along with its relevant widgets
+        """
+
+        # Display Frame
+        display_frame = ctk.CTkFrame(self, width= 1000, height=2000)
+        display_frame.pack(side=ctk.LEFT,padx =20, pady=20)
+        display_frame.pack_propagate(False)
+
+
+        # Text-Box widget
+        self.text_box_label = ctk.CTkLabel(display_frame,text="Output:")
+        self.text_box_label.pack(anchor="nw", pady=10, padx = 10) 
+
+        self.text_box = ctk.CTkTextbox(display_frame,wrap="none", activate_scrollbars=True)  # Wrapping disabled to support horizontal scroll
+        self.text_box.pack(expand=True, fill="both", padx=10, pady=10)
+        self.text_box.configure(state="disabled") # Set to READ ONLY mode as a default setting
+
+    def generate_status_frame(self):
+        """This Function Creates the Status Frame along with its relevant widgets
+        """
+
+        # Status Frame
+        self.status_frame = ctk.CTkFrame(self, width=400,height=2000)
+        self.status_frame.pack(side=ctk.LEFT, padx=20 , pady=20)
+        self.status_frame.pack_propagate(False)
+
+        # status frame title
+        status_frame_title = ctk.CTkLabel(self.status_frame, text="Status:")
+        status_frame_title.pack(anchor = "nw",pady = 10, padx=10)
+
+        # Text Box
+        self.status_box = ctk.CTkTextbox(self.status_frame,activate_scrollbars=True,wrap="word")
+        self.status_box.pack(expand=True, fill="both", padx=10, pady=10)
+        self.status_box.configure(state="disabled") # Set to READ ONLY mode as a default setting
+
+
+
+    def update_status(self, message, color):
+        """Funtion to add current status to the status box
+        
+        Args:
+            message (_type_): status or error message
+            color (_type_): color of the message
+        """
+
+        
+        # Enable editing temporarily
+        self.status_box.configure(state="normal")
+        
+        # Get the current line number
+        self.current_line_number = int(self.status_box.index("insert").split('.')[0])
+        
+        # Configure the tag with the specified color for the current line
+        tag_name = f"f{self.current_line_number}"  # Create a tag name based on the current line number
+        self.status_box.tag_config(tag_name, foreground=color)  # Configure the tag for text color
+        
+        # Insert the message at the end of the textbox with the new tag
+        self.status_box.insert("end", message + "\n\n", tag_name)  # Use the tag when inserting text
+        
+        # Scroll to the end so the latest message is visible
+        self.status_box.see("end")
+        
+        # Set back to read-only mode
+        self.status_box.configure(state="disabled")
+        
+
 
 
     def optionmenu_callback(self, choice):
@@ -174,6 +275,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.master_data_input_sheet_label.configure("Upload Master Data Input Sheet:")
         self.has_unsaved_changes = True
         self.master_data_input_sheet_path = self.upload_file("Select the Master Data Input Sheet", self.master_data_input_sheet_label)
+        self.load_excel(self.master_data_input_sheet_path)
         self.master_data_input_sheet_button.configure(text="Re-upload Master Data Input Sheet")
 
 
@@ -183,8 +285,13 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             year2 = self.automatic_entry_year2.get()
 
             self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_automatic(year1),self.process_automatic(year2))
-            self.display_msg(msg, color)
+            self.update_status(msg, color)
             self.display_dataframe(self.pay_schedules_df)
+            self.progress_bar.set(1)
+            self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
+            self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
+            self.pay_periods_label.pack(pady=10)
+
 
 
        
@@ -261,27 +368,17 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.controller.show_frame("SpreadsheetGenerator")  # Navigate back to the previous frame
 
     
-    def display_msg(self, msg, color):
-        # If a message label already exists, update its text and color
-        if self.msg_label:
-            self.msg_label.configure(text=msg, text_color=color, fg_color = "#FFFFFF")
-        else:
-            # Create the message label only if it doesn't exist
-            self.msg_label = ctk.CTkLabel(self, text=msg, text_color=color , fg_color = "#FFFFFF")
-            # Pack at the bottom center
-            self.msg_label.pack(side="bottom", pady=10)
 
-        # Remove the message after 5 seconds
-        self.after(5000, self.clear_error_message)
 
     
     # Function to return df for the Automatic choice in Option Menu
     def process_automatic(self, year):
         total_steps=5
+        self.progress_bar.set(0)
         try:
             # Construct URL
             url, msg, color = pp.construct_url(year)
-            self.display_msg(msg, color)
+            self.update_status(msg, color)
 
             # Check for error in URL construction
             if color == "red":
@@ -290,7 +387,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
             # Download PDF
             pdf, msg, color = pp.download_pdf(url)
-            self.display_msg(msg, color)
+            self.update_status(msg, color)
 
             # Check for error in downloading PDF
             if color == "red":
@@ -299,7 +396,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
             # Convert PDF to Word
             word, msg, color = pp.pdf_to_word(pdf)
-            self.display_msg(msg, color)
+            self.update_status(msg, color)
 
             # Check for error in converting PDF to Word
             if color == "red":
@@ -308,7 +405,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
             # Convert Word to DataFrame
             df, msg, color = pp.word_to_df(word)
-            self.display_msg(msg, color)
+            self.update_status(msg, color)
 
             # Check for error in converting Word to DataFrame
             if color == "red":
@@ -318,29 +415,44 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             return df  # Return the DataFrame if everything was successful
 
         except Exception as e:
-            self.display_msg(str(e), "red")  # Display the error message in red
+            self.update_status(str(e), "red")  # Display the error message in red
             return None  # Return None to indicate failure
-
-
-    def clear_error_message(self):
-        """Clear the error message after 5 seconds."""
-        if self.msg_label:
-            self.msg_label.destroy()
-            self.msg_label= None
 
 
 
     def display_dataframe(self, df):
         if df is not None and not df.empty:
             df_string = df.to_string(index=False)  # Convert DataFrame to string without the index
-            messagebox.showinfo("DataFrame", df_string)  # Show DataFrame in a message box
-        else:
-            messagebox.showinfo("DataFrame", "The DataFrame is empty or None.")  # Handle empty DataFrame
+            self.text_box_label.configure(text = "Pay Periods")
 
+            # Insert the DataFrame content into the textbox
+            self.text_box.configure(state="normal")
+            self.text_box.insert("1.0", df_string)  # "1.0" marks the start of the textbox
+          # Make textbox read-only
+        else:
+            messagebox.showinfo("DataFrame", "The DataFrame is empty or None.")  # Han
+
+        
 
     def update_progress(self, step, total_steps):
+        """_summary_
+
+        Args:
+            step (_type_): _description_
+            total_steps (_type_): _description_
+        """        
         # Update the progress bar
         self.progress_bar.set(step / total_steps)
         self.update()  # Update the UI
 
 
+    def load_excel(self, file_path):
+        wb = openpyxl.load_workbook(file_path)
+        sheet = wb.active
+        data = ""
+        self.text_box.configure(state="normal")
+        for row in sheet.iter_rows(values_only=True):
+            data += "\t".join([str(cell) for cell in row]) + "\n"
+
+        self.text_box.insert("1.0", data)
+        self.text_box.configure(state="disabled")  # Make it read-only

@@ -1,4 +1,6 @@
-# This file contains functions for various processing tasks.
+# This file contains functions for PaySchedule Processing
+
+#Required Import Statements
 import pandas as pd
 import os
 import requests
@@ -6,15 +8,34 @@ import requests
 from pdf2docx import Converter
 from docx import Document
 
-#funtion to construct the payschedule url from the year
+
+
+
 def construct_url(year):
+    """This Function constructs the url of the payschedule
+
+    Args:
+        year (_type_): Year to be Downloaded
+
+    Returns:
+        _type_: Url of the respective year to be downloaded , returns green as the link is always sucessfully 
+    """
+
     url = f"https://uwservice.wisconsin.edu/docs/publications/pay-bw-calendar-{year}.pdf"
     
     return url , "url constructed successfully" , "green"
 
 
-# function to download pdf from url
+
 def download_pdf(url):   
+    """ This function Downloads the payschedule PDF from the WEB
+
+    Args:
+        url (_type_): get the url of the PDF to be downloaded
+
+    Returns:
+        _type_: PDF format of the Payschedule
+    """
     # Get the current directory of the script (which is the src directory)
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -152,12 +173,6 @@ def merge_dfs(df_previous_year, df_current_year):
 
 # function to calculate number of pay periods from merged pandas data 
 def get_payperiod(pay_schedule):
-    return 0
+    return len(pay_schedule)
 
-# Function to return df for the Automatic choice in Option Menu
-def process_automatic(year):
-    url = construct_url(year)
-    pdf = download_pdf(url)
-    word = pdf_to_word(pdf)
-    df = word_to_df(word)
-    return df
+

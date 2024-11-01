@@ -102,33 +102,33 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         optionmenu.pack(pady=10)
 
         # Entry Widgets for Automatic Option
-        self.automatic_entry_year1 = ctk.CTkEntry(input_frame, placeholder_text="Enter Year 1 of FY (Jul-Dec):", width=300)
-        self.automatic_entry_year1.pack(pady=10)
-        self.automatic_entry_year1.pack_forget()  # Initially hide the entry widget
+        self.automatic_entry_year_1 = ctk.CTkEntry(input_frame, placeholder_text="Enter Year 1 of FY (Jul-Dec):", width=300)
+        self.automatic_entry_year_1.pack(pady=10)
+        self.automatic_entry_year_1.pack_forget()  # Initially hide the entry widget
 
-        self.automatic_entry_year2 = ctk.CTkEntry(input_frame, placeholder_text="Enter Year 2 of FY (Jan-Jun):", width=300)
-        self.automatic_entry_year2.pack(pady=10)
-        self.automatic_entry_year2.pack_forget()  # Initially hide the entry widget
+        self.automatic_entry_year_2 = ctk.CTkEntry(input_frame, placeholder_text="Enter Year 2 of FY (Jan-Jun):", width=300)
+        self.automatic_entry_year_2.pack(pady=10)
+        self.automatic_entry_year_2.pack_forget()  # Initially hide the entry widget
 
         # Create entry widgets for URL in Option Menu
-        self.entry_first_half = ctk.CTkEntry(input_frame, placeholder_text="Enter your input here", width=300)
-        self.entry_first_half.pack(pady=10)
-        self.entry_first_half.pack_forget()  # Initially hide the entry widget
+        self.url_entry_year_1 = ctk.CTkEntry(input_frame, placeholder_text="Enter your input here", width=300)
+        self.url_entry_year_1.pack(pady=10)
+        self.url_entry_year_1.pack_forget()  # Initially hide the entry widget
 
     
-        self.entry_second_half = ctk.CTkEntry(input_frame, placeholder_text="Enter your input here", width=300)
-        self.entry_second_half.pack(pady=10)
-        self.entry_second_half.pack_forget()  # Initially hide the entry widget
+        self.url_entry_year_2 = ctk.CTkEntry(input_frame, placeholder_text="Enter your input here", width=300)
+        self.url_entry_year_2.pack(pady=10)
+        self.url_entry_year_2.pack_forget()  # Initially hide the entry widget
 
 
         # Labels to display Year 1 and 2 paths for Uplaod in Option Menu
-        self.year1_label = ctk.CTkLabel(input_frame, text="Year 1 of FY (Jul-Dec):")
-        self.year1_label.pack(pady=10)
-        self.year1_label.pack_forget()
+        self.upload_label_year_1 = ctk.CTkLabel(input_frame, text="Year 1 of FY (Jul-Dec):")
+        self.upload_label_year_1.pack(pady=10)
+        self.upload_label_year_1.pack_forget()
 
-        self.year2_label = ctk.CTkLabel(input_frame, text="Year 2 of FY (Jan-Jun):")
-        self.year2_label.pack(pady=10)
-        self.year2_label.pack_forget()
+        self.upload_label_year_2 = ctk.CTkLabel(input_frame, text="Year 2 of FY (Jan-Jun):")
+        self.upload_label_year_2.pack(pady=10)
+        self.upload_label_year_2.pack_forget()
 
 
         # Download Payschedule Button
@@ -217,30 +217,31 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
 
     def optionmenu_callback(self, choice):
-        print("Option selected:", choice)
+        if choice != "Select an option":
+            self.update_status(f"Option selected: {choice}", "white")
 
         # Hide both entries by default
-        self.entry_first_half.pack_forget()
-        self.entry_second_half.pack_forget()
+        self.url_entry_year_1.pack_forget()
+        self.url_entry_year_2.pack_forget()
 
         if choice == "Select an option":
             self.options_state=0
-            self.entry_first_half.pack_forget()  # Hide entries
-            self.entry_second_half.pack_forget()
-            self.year1_label.pack_forget()
-            self.year2_label.pack_forget()
-            self.download_pay_button.pack_forget()
+            self.option_menu_selection_reset()
+            #self.url_entry_year_2.pack_forget()
+            #self.upload_label_year_1.pack_forget()
+            #self.upload_label_year_2.pack_forget()
+            #self.download_pay_button.pack_forget()
 
         elif choice == "Automatic":
             self.option_menu_selection_reset()
             self.has_unsaved_changes = True
             self.options_state=1
 
-            self.automatic_entry_year1.configure(placeholder_text="Enter Year 1 of FY (Jul-Dec):")
-            self.automatic_entry_year1.pack(pady=10)
+            self.automatic_entry_year_1.configure(placeholder_text="Enter Year 1 of FY (Jul-Dec):")
+            self.automatic_entry_year_1.pack(pady=10)
 
-            self.automatic_entry_year2.configure(placeholder_text="Enter Year 2 of FY (Jan-Jun):")
-            self.automatic_entry_year2.pack(pady=10)
+            self.automatic_entry_year_2.configure(placeholder_text="Enter Year 2 of FY (Jan-Jun):")
+            self.automatic_entry_year_2.pack(pady=10)
 
             self.download_pay_button.pack(pady=10)  
 
@@ -250,11 +251,11 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.has_unsaved_changes = True
             self.options_state=2
 
-            self.entry_first_half.configure(placeholder_text="Enter URL for Year 1 of FY (Jul-Dec):")
-            self.entry_first_half.pack(pady=10)
+            self.url_entry_year_1.configure(placeholder_text="Enter URL for Year 1 of FY (Jul-Dec):")
+            self.url_entry_year_1.pack(pady=10)
 
-            self.entry_second_half.configure(placeholder_text="Enter URL for Year 2 of FY (Jan-Jun):")
-            self.entry_second_half.pack(pady=10)
+            self.url_entry_year_2.configure(placeholder_text="Enter URL for Year 2 of FY (Jan-Jun):")
+            self.url_entry_year_2.pack(pady=10)
 
             
 
@@ -266,8 +267,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.has_unsaved_changes = True
             self.options_state=3
 
-            year1_pdf = self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.year1_label) 
-            year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.year2_label)  # Call the file upload function
+            year1_pdf = self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.upload_label_year_1) 
+            year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.upload_label_year_2)  # Call the file upload function
 
             self.download_pay_button.pack(pady=10) 
 
@@ -281,8 +282,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
     def download_pay_schedules(self,option_state):
         if(option_state==1):
-            year1 = self.automatic_entry_year1.get()
-            year2 = self.automatic_entry_year2.get()
+            year1 = self.automatic_entry_year_1.get()
+            year2 = self.automatic_entry_year_2.get()
 
             self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_automatic(year1),self.process_automatic(year2))
             self.update_status(msg, color)
@@ -307,65 +308,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             label.pack(pady=10)
             return file_path
 
-    def confirm_exit(self):
-        """Show confirmation dialog before navigating back."""
-        if self.has_unsaved_changes:
-            response = messagebox.askyesno("Unsaved Changes", "Any unsaved progress will be lost. Do you want to continue?")
-            if response:  # User chose to continue
-                self.reset_and_back()
-        else:
-            self.reset_and_back()
-
-    #Function to reset all the option menu fields to its original state while choosing options
-    def option_menu_selection_reset(self):
-
-        # AUTOMATIC OPTION
-        self.automatic_entry_year1.pack_forget()  # Hide the entry for the first half
-        self.automatic_entry_year1.delete(0, 'end')  # Clear the entry text
-        self.automatic_entry_year2.pack_forget()  # Hide the entry for the second half
-        self.automatic_entry_year2.delete(0, 'end')  # Clear the entry text
 
 
-        # URL OPTION
-        self.entry_first_half.pack_forget()  # Hide the entry for the first half
-        self.entry_first_half.delete(0, 'end')  # Clear the entry text
-        self.entry_second_half.pack_forget()  # Hide the entry for the second half
-        self.entry_second_half.delete(0, 'end')  # Clear the entry text
-        
-
-        # UPLOAD OPTION
-        self.year1_label.pack_forget()  # Hide the Year 1 label
-        self.year1_label.configure(text="Year 1 of FY (Jul-Dec):")  # Reset the label text
-        
-        self.year2_label.pack_forget()  # Hide the Year 2 label
-        self.year2_label.configure(text="Year 2 of FY (Jan-Jun):")  # Reset the label text
-
-        # Download button
-        self.download_pay_button.pack_forget()
-
-
-    # Reset page to its original state 
-    def reset_and_back(self):
-        # Reset all fields and labels
-
-        # Master Data Input Field
-        self.master_data_input_sheet_label.configure(text="")
-        self.master_data_input_sheet_button.configure(text="Upload Master Data Input Sheet")# Upload button
-
-        # Option Menu Field
-        self.optionmenu_var.set("Select an option")  # Reset option menu
-        self.entry_first_half.pack_forget()  # Hide the entry for the first half
-        self.entry_first_half.delete(0, 'end')  # Clear the entry text
-        self.entry_second_half.pack_forget()  # Hide the entry for the second half
-        self.entry_second_half.delete(0, 'end')  # Clear the entry text
-        
-        self.year1_label.pack_forget()  # Hide the Year 1 label
-        self.year1_label.configure(text="Year 1 of FY (Jul-Dec):")  # Reset the label text
-        
-        self.year2_label.pack_forget()  # Hide the Year 2 label
-        self.year2_label.configure(text="Year 2 of FY (Jan-Jun):")  # Reset the label text
-        
-        self.controller.show_frame("SpreadsheetGenerator")  # Navigate back to the previous frame
 
     
 
@@ -421,14 +365,19 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
 
     def display_dataframe(self, df):
+        """This function displays a pandas data frame onto the output tetxbox
+
+        Args:
+            df (_type_): Pandas data frame to be displayed
+        """
         if df is not None and not df.empty:
             df_string = df.to_string(index=False)  # Convert DataFrame to string without the index
-            self.text_box_label.configure(text = "Pay Periods")
 
             # Insert the DataFrame content into the textbox
             self.text_box.configure(state="normal")
             self.text_box.insert("1.0", df_string)  # "1.0" marks the start of the textbox
-          # Make textbox read-only
+            # Make textbox read-only
+            self.text_box.configure(state="disabled")
         else:
             messagebox.showinfo("DataFrame", "The DataFrame is empty or None.")  # Han
 
@@ -456,3 +405,116 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         self.text_box.insert("1.0", data)
         self.text_box.configure(state="disabled")  # Make it read-only
+
+    def clear_text_box(self, textbox):
+        """This function deletes all the text in the CTKTextbox
+
+        Args:
+            textbox (_type_): Text box to be cleared
+        """
+        textbox.configure(state="normal")  # Enable editing if the box is in read-only mode
+        textbox.delete("1.0", "end")       # Delete from the start to the end
+        textbox.configure(state="disabled") # Optionally set it back to read-only
+        
+
+    def confirm_exit(self):
+        """ This function shows confirmation dialog before navigating back."""
+        if self.has_unsaved_changes:
+            response = messagebox.askyesno("Unsaved Changes", "Any unsaved progress will be lost. Do you want to continue?")
+            if response:  # User chose to continue
+                self.reset_and_back()
+        else:
+            self.reset_and_back()
+
+
+
+    def reset_and_back(self):
+        """ This Funtion resets the page to its original state 
+        """
+        # Reset all fields and labels
+
+        # resetting the inuut frame
+        self.reset_input_frame()
+
+
+
+        # Option Menu Field
+        self.optionmenu_var.set("Select an option")  # Reset option menu
+        self.url_entry_year_1.pack_forget()  # Hide the entry for the first half
+        self.url_entry_year_1.delete(0, 'end')  # Clear the entry text
+        self.url_entry_year_2.pack_forget()  # Hide the entry for the second half
+        self.url_entry_year_2.delete(0, 'end')  # Clear the entry text
+        
+        self.upload_label_year_1.pack_forget()  # Hide the Year 1 label
+        self.upload_label_year_1.configure(text="Year 1 of FY (Jul-Dec):")  # Reset the label text
+        
+        self.upload_label_year_2.pack_forget()  # Hide the Year 2 label
+        self.upload_label_year_2.configure(text="Year 2 of FY (Jan-Jun):")  # Reset the label text
+
+        self.clear_text_box(self.status_box)
+        
+        self.controller.show_frame("SpreadsheetGenerator")  # Navigate back to the previous frame
+    
+    def reset_input_frame(self):
+        """ This function resets the input frame to its original state
+        """
+
+        # Master Data Input Field
+        self.master_data_input_sheet_label.configure(text="") # Setting the path label clear
+        self.master_data_input_sheet_button.configure(text="Upload Master Data Input Sheet")# Upload button
+
+    def reset_display_frame(self):
+        """ This function resets the input frame to its original state
+        """
+
+        # clearing the display box
+        self.clear_text_box(self.text_box)
+        self.text_box_label.configure(text="Output:")
+
+    def reset_status_frame(self):
+        """ This function resets the status frame to its original state
+        """
+
+        # Clearing the status box
+        self.clear_text_box(self.status_box)
+         
+
+
+
+
+    def option_menu_selection_reset(self):
+        """ This function resets all the option menu fields to its original state while choosing options
+        """
+
+        # AUTOMATIC OPTION
+        self.automatic_entry_year_1.pack_forget()  # Hide the entry for the first half
+        self.automatic_entry_year_1.delete(0, 'end')  # Clear the entry text
+        self.automatic_entry_year_2.pack_forget()  # Hide the entry for the second half
+        self.automatic_entry_year_2.delete(0, 'end')  # Clear the entry text
+
+
+        # URL OPTION
+        self.url_entry_year_1.pack_forget()  # Hide the entry for the first half
+        self.url_entry_year_1.delete(0, 'end')  # Clear the entry text
+        self.url_entry_year_2.pack_forget()  # Hide the entry for the second half
+        self.url_entry_year_2.delete(0, 'end')  # Clear the entry text
+        
+
+        # UPLOAD OPTION
+        self.upload_label_year_1.pack_forget()  # Hide the Year 1 label
+        self.upload_label_year_1.configure(text="Year 1 of FY (Jul-Dec):")  # Reset the label text
+        self.upload_label_year_2.pack_forget()  # Hide the Year 2 label
+        self.upload_label_year_2.configure(text="Year 2 of FY (Jan-Jun):")  # Reset the label text
+
+        # PAY PERIOD LABEL
+        self.pay_periods_label.pack_forget()
+        self.pay_periods_label.configure(text = "")
+
+        # Clearing the Output Box
+        self.clear_text_box(self.text_box)
+
+
+        # Download button
+        self.download_pay_button.pack_forget()
+
+

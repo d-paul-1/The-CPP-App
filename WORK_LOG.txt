@@ -32,5 +32,16 @@ DATE: 10/30/2024
 HOURS: 2.5
 DESCRIPTION: Completed the df_merge, and add a progress bar , df merges correctly
 TO DO: Need to CLEAN UP CODE (HIGHLY MESSY), need to test GUI and error handling, complete process function for url and manual. A BUG - the process bar goes back 
-beacuse of year 1 and 2 individual being called in procees i need to fix that 
+beacuse of year 1 and 2 individual being called in procees i need to fix that. Also need to figure out how to fix pyinstaller error, it does not include assets, somehting to do with
+its path.
 
+DATE: 10/31/2024
+HOURS: 3.5(Official) + 2(unoffical)
+DESCRIPTION: Worked on poperly formatting the code such as clean up and impoving readability, added status frame intsead of the old label to imporve efficency and neatness.
+TO DO: completed process-url,upload and make sure the UI is completely resopsive and also imporve the reset function so that code is less redundant.
+
+
+DATE: 11/1/2024
+HOURS: 2.5
+DESCRIPTION: Worked on code clean up and GUI tetsing
+TO DO: Fix the load pay schedule button so tha ti clear when page is reset

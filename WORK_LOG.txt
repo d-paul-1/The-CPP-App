@@ -45,3 +45,9 @@ DATE: 11/1/2024
 HOURS: 2.5
 DESCRIPTION: Worked on code clean up and GUI tetsing
 TO DO: Fix the load pay schedule button so tha ti clear when page is reset
+
+DATE: 11/3/2024
+HOURS: 3
+DESCRIPTION: Completed the pending option menu processing functions and also completed GUI functinlaity.
+TO DO: add a button to genereate the payroll spread sheet, make a new class to store the code for the payroll spreadsheet creation, finlaize on a master data input sheet design.
+

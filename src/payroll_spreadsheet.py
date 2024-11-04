@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import requests
 import openpyxl
+import subprocess
 
 class PayrollSpreadsheet(ctk.CTkFrame):
 
@@ -145,6 +146,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.progress_bar.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=10)
         self.progress_bar.set(0)  # Start at 0%
 
+        
+
 
 
     def generate_display_frame(self):
@@ -217,6 +220,11 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
 
     def optionmenu_callback(self, choice):
+        """This Funtion handles the option menu selections
+
+        Args:
+            choice (_type_): choice selected
+        """
         if choice != "Select an option":
             self.update_status(f"Option selected: {choice}", "white")
 
@@ -267,8 +275,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.has_unsaved_changes = True
             self.options_state=3
 
-            year1_pdf = self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.upload_label_year_1) 
-            year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.upload_label_year_2)  # Call the file upload function
+            self.year1_pdf = self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.upload_label_year_1) 
+            self.year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.upload_label_year_2)  # Call the file upload function
 
             self.download_pay_button.pack(pady=10) 
 
@@ -277,6 +285,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.has_unsaved_changes = True
         self.master_data_input_sheet_path = self.upload_file("Select the Master Data Input Sheet", self.master_data_input_sheet_label)
         self.load_excel(self.master_data_input_sheet_path)
+        self.update_status("Master Data Input Sheet Uploaded Successfully","white")
         self.master_data_input_sheet_button.configure(text="Re-upload Master Data Input Sheet")
 
 
@@ -293,15 +302,47 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
 
+        if(option_state==2):
+            year1 = self.url_entry_year_1.get()
+            year2 = self.url_entry_year_2.get()
+
+            self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_url(year1),self.process_url(year2))
+            self.update_status(msg, color)
+            self.display_dataframe(self.pay_schedules_df)
+            self.progress_bar.set(1)
+            self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
+            self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
+            self.pay_periods_label.pack(pady=10)
+
+        if(option_state==3):
+
+            self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_upload(self.year1_pdf),self.process_upload(self.year2_pdf))
+            self.update_status(msg, color)
+            self.display_dataframe(self.pay_schedules_df)
+            self.progress_bar.set(1)
+            self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
+            self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
+            self.pay_periods_label.pack(pady=10)
+
 
 
        
 
     def upload_file(self, text, label):
+        """
+        Opens a file dialog to allow the user to upload a file and updates the label with the file path.
+
+        Parameters:
+        text (str): The title text to display on the file dialog.
+        label (tk.Label): The label widget that displays the selected file path.
+
+        Returns:
+        str: The path of the selected file, or None if no file is selected.
+        """
         # Open a file dialog to allow the user to upload a file
         file_path = filedialog.askopenfilename(
             title=text,
-            filetypes=[("Excel files", "*.xlsx *.xls"), ("All files", "*.*")]
+            filetypes=[("All files", "*.*")]
         )
         if file_path:  # If a file is selected
             label.configure(text=file_path)
@@ -314,9 +355,15 @@ class PayrollSpreadsheet(ctk.CTkFrame):
     
 
 
-    
-    # Function to return df for the Automatic choice in Option Menu
     def process_automatic(self, year):
+        """ Function to return df for the Automatic choice in Option Menu
+
+        Args:
+            year (_type_): year of pay schedule
+
+        Returns:
+            _type_: Pandas Df of payperiods
+        """
         total_steps=5
         self.progress_bar.set(0)
         try:
@@ -361,6 +408,92 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         except Exception as e:
             self.update_status(str(e), "red")  # Display the error message in red
             return None  # Return None to indicate failure
+        
+
+    def process_url(self, url):
+        """ Function to return df for the URL choice in Option Menu
+
+        Args:
+            url (_type_): url of pay schedule
+
+        Returns:
+            _type_: Pandas Df of payperiods
+        """
+        total_steps=5
+        self.progress_bar.set(0)
+        try:
+            # Download PDF
+            pdf, msg, color = pp.download_pdf(url)
+            self.update_status(msg, color)
+
+            # Check for error in downloading PDF
+            if color == "red":
+                raise Exception("Error downloading PDF. Please re-enter the year.")
+            self.update_progress(2, total_steps)
+
+            # Convert PDF to Word
+            word, msg, color = pp.pdf_to_word(pdf)
+            self.update_status(msg, color)
+
+            # Check for error in converting PDF to Word
+            if color == "red":
+                raise Exception("Error converting PDF to Word. Please re-enter the year.")
+            self.update_progress(3, total_steps)
+
+            # Convert Word to DataFrame
+            df, msg, color = pp.word_to_df(word)
+            self.update_status(msg, color)
+
+            # Check for error in converting Word to DataFrame
+            if color == "red":
+                raise Exception("Error converting Word to DataFrame. Please re-enter the year.")
+            self.update_progress(4, total_steps)
+
+            return df  # Return the DataFrame if everything was successful
+
+        except Exception as e:
+            self.update_status(str(e), "red")  # Display the error message in red
+            return None  # Return None to indicate failure
+        
+    
+    def process_upload(self, pdf):
+        """ Function to return df for the URL choice in Option Menu
+
+        Args:
+            pdf (_type_): pdf of pay schedule
+
+        Returns:
+            _type_: Pandas Df of payperiods
+        """
+        total_steps=5
+        self.progress_bar.set(0)
+        try:
+
+            # Convert PDF to Word
+            word, msg, color = pp.pdf_to_word(pdf)
+            self.update_status(msg, color)
+
+            # Check for error in converting PDF to Word
+            if color == "red":
+                raise Exception("Error converting PDF to Word. Please re-enter the year.")
+            self.update_progress(3, total_steps)
+
+            # Convert Word to DataFrame
+            df, msg, color = pp.word_to_df(word)
+            self.update_status(msg, color)
+
+            # Check for error in converting Word to DataFrame
+            if color == "red":
+                raise Exception("Error converting Word to DataFrame. Please re-enter the year.")
+            self.update_progress(4, total_steps)
+
+            return df  # Return the DataFrame if everything was successful
+
+        except Exception as e:
+            self.update_status(str(e), "red")  # Display the error message in red
+            return None  # Return None to indicate failure
+        
+    
 
 
 
@@ -433,26 +566,15 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         """
         # Reset all fields and labels
 
-        # resetting the inuut frame
+        # input frame
         self.reset_input_frame()
 
+        # Display Frame
+        self.reset_display_frame()
 
-
-        # Option Menu Field
-        self.optionmenu_var.set("Select an option")  # Reset option menu
-        self.url_entry_year_1.pack_forget()  # Hide the entry for the first half
-        self.url_entry_year_1.delete(0, 'end')  # Clear the entry text
-        self.url_entry_year_2.pack_forget()  # Hide the entry for the second half
-        self.url_entry_year_2.delete(0, 'end')  # Clear the entry text
-        
-        self.upload_label_year_1.pack_forget()  # Hide the Year 1 label
-        self.upload_label_year_1.configure(text="Year 1 of FY (Jul-Dec):")  # Reset the label text
-        
-        self.upload_label_year_2.pack_forget()  # Hide the Year 2 label
-        self.upload_label_year_2.configure(text="Year 2 of FY (Jan-Jun):")  # Reset the label text
-
-        self.clear_text_box(self.status_box)
-        
+        # Status Frame
+        self.reset_status_frame()
+    
         self.controller.show_frame("SpreadsheetGenerator")  # Navigate back to the previous frame
     
     def reset_input_frame(self):
@@ -462,6 +584,12 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         # Master Data Input Field
         self.master_data_input_sheet_label.configure(text="") # Setting the path label clear
         self.master_data_input_sheet_button.configure(text="Upload Master Data Input Sheet")# Upload button
+
+        # Option Menu Reset
+        self.optionmenu_var.set("Select an option")  # Reset option menu
+        self.option_menu_selection_reset()
+
+        self.download_pay_button.pack_forget() # hiding the load pay schedule button
 
     def reset_display_frame(self):
         """ This function resets the input frame to its original state
@@ -516,5 +644,24 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Download button
         self.download_pay_button.pack_forget()
+
+        #Reseting the Progress Bar 
+        self.progress_bar.set(0) 
+
+
+    def open_excel(self,file_path):
+        """
+        Opens the specified Excel file in the default Excel application.
+
+        Parameters:
+        file_path (str): The full path of the Excel file to open. This should be a raw string or use double backslashes to avoid path issues on Windows.
+
+        Raises:
+        Exception: If the file cannot be opened, an exception message will be printed with the reason.
+        """
+        try:
+            subprocess.Popen(['start', 'excel', file_path], shell=True)
+        except Exception as e:
+            self.update_status(f"Failed to open Excel file: {e}", "red")
 
 

@@ -1,11 +1,13 @@
 import customtkinter as ctk
 from tkinter import filedialog, messagebox  # Import filedialog to handle file uploads and messagebox for popups
 import payroll_processing as pp
+import salaries_tab_generation as stg
 import pandas as pd
 import os
 import requests
 import openpyxl
 import subprocess
+import shutil
 
 class PayrollSpreadsheet(ctk.CTkFrame):
 
@@ -23,7 +25,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Making the page
         self.build_page()
-        
 
 
     def build_page(self):
@@ -59,6 +60,50 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         back_button = ctk.CTkButton(header_frame, text="Back to Spreadsheet Generator", command=self.confirm_exit)
         back_button.pack(side=ctk.RIGHT, padx=10, pady=10)
 
+        # Master Data Input sheet download button
+        master_data_input_sheet_download_button = ctk.CTkButton(header_frame, text="Download Master Data Input Sheet" , command=self.download_master_data_input_sheet)
+        master_data_input_sheet_download_button.pack(side=ctk.RIGHT, padx=10, pady=10)
+    
+    def confirm_exit(self):
+        """ This function shows confirmation dialog before navigating back."""
+        if self.has_unsaved_changes:
+            response = messagebox.askyesno("Unsaved Changes", "Any unsaved progress will be lost. Do you want to continue?")
+            if response:  # User chose to continue
+                self.reset_and_back()
+        else:
+            self.reset_and_back()
+
+    def download_master_data_input_sheet(self):
+        """Handles the download of the master data input sheet from the templates directory."""
+        try:
+            # Get the app's base directory
+            app_base_dir = os.path.dirname(os.path.abspath(__file__))
+            template_file_path = os.path.join(app_base_dir, "../templates", "master_data_input_sheet.xlsx")
+
+            # Check if the template file exists
+            if not os.path.exists(template_file_path):
+                self.update_status( "The Master Data Input Sheet template is missing.","red")
+                return
+
+            # Prompt the user for a save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx")],
+                title="Save Master Data Input Sheet As"
+            )
+            if not file_path:
+                return  # User canceled the operation
+
+            # Copy the template file to the selected location
+            shutil.copy(template_file_path, file_path)
+
+            # Notify the user
+            self.update_status(f"Download Complete, File saved successfully at {file_path}", "Green")
+
+        except Exception as e:
+            # Handle errors and notify the user
+            messagebox.showerror("Error", f"An error occurred while downloading the file:\n{e}")
+
 
 
     def generate_input_frame(self):
@@ -82,6 +127,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         # Button to Upload Master Data Input Sheet
         self.master_data_input_sheet_button = ctk.CTkButton(input_frame,text="Upload master Data Input Sheet", command=self.upload_master_data_input)
         self.master_data_input_sheet_button.pack(pady=10)
+        
 
 
 
@@ -141,12 +187,16 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.pay_periods_label.pack(pady=10)
         self.pay_periods_label.pack_forget()
 
+        self.generate_payroll_spreadsheet_button = ctk.CTkButton(input_frame, text="Generate Payroll Spreadsheet", command= lambda : self.generate_payroll_spreadsheet() )
+        self.generate_payroll_spreadsheet_button.pack(pady=10)
+        self.generate_payroll_spreadsheet_button.pack_forget()
+
         # Initialize progress bar
         self.progress_bar = ctk.CTkProgressBar(input_frame)
         self.progress_bar.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=10)
         self.progress_bar.set(0)  # Start at 0%
 
-        
+
 
 
 
@@ -265,8 +315,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.url_entry_year_2.configure(placeholder_text="Enter URL for Year 2 of FY (Jan-Jun):")
             self.url_entry_year_2.pack(pady=10)
 
-            
-
             self.download_pay_button.pack(pady=10) 
 
 
@@ -275,21 +323,28 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.has_unsaved_changes = True
             self.options_state=3
 
-            self.year1_pdf = self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.upload_label_year_1) 
-            self.year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.upload_label_year_2)  # Call the file upload function
+            self.year1_pdf = self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.upload_label_year_1,"pdf") 
+            self.year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.upload_label_year_2 ,"pdf")  # Call the file upload function
 
             self.download_pay_button.pack(pady=10) 
 
     def upload_master_data_input(self):
         self.master_data_input_sheet_label.configure("Upload Master Data Input Sheet:")
         self.has_unsaved_changes = True
-        self.master_data_input_sheet_path = self.upload_file("Select the Master Data Input Sheet", self.master_data_input_sheet_label)
+        self.master_data_input_sheet_path = self.upload_file("Select the Master Data Input Sheet", self.master_data_input_sheet_label,"excel")
         self.load_excel(self.master_data_input_sheet_path)
         self.update_status("Master Data Input Sheet Uploaded Successfully","white")
         self.master_data_input_sheet_button.configure(text="Re-upload Master Data Input Sheet")
 
 
     def download_pay_schedules(self,option_state):
+        """ Funcrion that calls the respective option menu process funtions and handles entry and par period display
+
+        Args:
+            option_state (_type_): option menu selection
+        """
+        successfull = False # variable to check if each option state task ran without errors
+
         if(option_state==1):
             year1 = self.automatic_entry_year_1.get()
             year2 = self.automatic_entry_year_2.get()
@@ -301,6 +356,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
             self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
+            successfull =True
 
         if(option_state==2):
             year1 = self.url_entry_year_1.get()
@@ -313,6 +369,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
             self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
+            successfull =True
 
         if(option_state==3):
 
@@ -323,36 +380,46 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
             self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
+            successfull =True
+
+        if successfull:
+            self.generate_payroll_spreadsheet_button.pack(pady=10)
 
 
 
        
 
-    def upload_file(self, text, label):
+    def upload_file(self, text, label, type):
         """
         Opens a file dialog to allow the user to upload a file and updates the label with the file path.
 
         Parameters:
         text (str): The title text to display on the file dialog.
         label (tk.Label): The label widget that displays the selected file path.
+        type (str): The type of file to filter in the dialog. Options are 'excel', 'pdf', or 'all'.
 
         Returns:
         str: The path of the selected file, or None if no file is selected.
         """
+        # Determine file types based on the `type` parameter
+        if type == 'excel':
+            filetypes = [("Excel files", "*.xlsx *.xls")]
+        elif type == 'pdf':
+            filetypes = [("PDF files", "*.pdf")]
+        else:  # For 'all' or any other input, allow all file types
+            filetypes = [("All files", "*.*")]
+
         # Open a file dialog to allow the user to upload a file
         file_path = filedialog.askopenfilename(
             title=text,
-            filetypes=[("All files", "*.*")]
+            filetypes=filetypes
         )
+
         if file_path:  # If a file is selected
             label.configure(text=file_path)
             label.pack(pady=10)
             return file_path
 
-
-
-
-    
 
 
     def process_automatic(self, year):
@@ -493,9 +560,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.update_status(str(e), "red")  # Display the error message in red
             return None  # Return None to indicate failure
         
-    
-
-
 
     def display_dataframe(self, df):
         """This function displays a pandas data frame onto the output tetxbox
@@ -550,15 +614,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         textbox.configure(state="disabled") # Optionally set it back to read-only
         
 
-    def confirm_exit(self):
-        """ This function shows confirmation dialog before navigating back."""
-        if self.has_unsaved_changes:
-            response = messagebox.askyesno("Unsaved Changes", "Any unsaved progress will be lost. Do you want to continue?")
-            if response:  # User chose to continue
-                self.reset_and_back()
-        else:
-            self.reset_and_back()
-
 
 
     def reset_and_back(self):
@@ -605,9 +660,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Clearing the status box
         self.clear_text_box(self.status_box)
-         
-
-
 
 
     def option_menu_selection_reset(self):
@@ -645,6 +697,9 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         # Download button
         self.download_pay_button.pack_forget()
 
+        #Generate Payroll Spreadsheet button
+        self.generate_payroll_spreadsheet_button.pack_forget()
+
         #Reseting the Progress Bar 
         self.progress_bar.set(0) 
 
@@ -663,5 +718,31 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             subprocess.Popen(['start', 'excel', file_path], shell=True)
         except Exception as e:
             self.update_status(f"Failed to open Excel file: {e}", "red")
+
+
+    def generate_payroll_spreadsheet(self):
+
+        try:
+            # Prompt the user to select a folder
+            save_folder = filedialog.askdirectory(
+                title="Select Folder to Save Payroll Spreadsheet"
+            )
+
+            if not save_folder:
+                # User canceled the selection
+                self.update_status("Operation canceled. No folder selected.","White")
+                return
+
+            # Generate the payroll spreadsheet
+            self.payroll_file_path = stg.generate_salaries_tab(master_data_input_sheet_path=self.master_data_input_sheet_path, 
+                                                     save_path=save_folder,
+                                                     pay_periods=self.pay_periods)
+
+            # Notify the user
+            self.update_status(f"Payroll spreadsheet saved successfully at {self.payroll_file_path}", "Green")
+
+        except Exception as e:
+            # Handle any errors
+            self.update_status(f"An error occurred while generating the payroll spreadsheet:\n{e}" , "Red")
 
 

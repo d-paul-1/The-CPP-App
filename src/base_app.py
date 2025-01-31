@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from login_page import LoginPage
 from main_menu import MainMenu
-from admin_menu import AdminMenu
+from financial_menu import FinancialMenu
 from spreadsheet_generator import SpreadsheetGenerator
 from payroll_spreadsheet import PayrollSpreadsheet
 
@@ -19,7 +19,6 @@ class BaseApp(ctk.CTk):
         # Create a container to hold all pages
         self.container = ctk.CTkFrame(self, corner_radius=0)
         self.container.pack(fill="both", expand=True)
-
         self.container.grid_rowconfigure(0, weight=1)
         self.container.grid_columnconfigure(0, weight=1)
 
@@ -27,7 +26,7 @@ class BaseApp(ctk.CTk):
         self.frames = {}
 
         # Add pages to the container
-        for PageClass in (LoginPage, MainMenu, AdminMenu, SpreadsheetGenerator,PayrollSpreadsheet):
+        for PageClass in (LoginPage, MainMenu, FinancialMenu, SpreadsheetGenerator,PayrollSpreadsheet):
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
             self.frames[page_name] = frame
@@ -45,3 +44,5 @@ if __name__ == "__main__":
     app = BaseApp()
 
     app.mainloop()
+
+    

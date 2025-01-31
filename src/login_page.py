@@ -20,8 +20,6 @@ class LoginPage(ctk.CTkFrame):
         logo_label = ctk.CTkLabel(login_frame, image=logo_image, text="")  # Display logo, remove text
         logo_label.pack(pady=20)
 
-
-
         # Username entry field
         self.username_entry = ctk.CTkEntry(login_frame, placeholder_text="Username")
         self.username_entry.pack(pady=10)

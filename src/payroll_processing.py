@@ -9,8 +9,6 @@ from pdf2docx import Converter
 from docx import Document
 
 
-
-
 def construct_url(year):
     """This Function constructs the url of the payschedule
 
@@ -24,7 +22,6 @@ def construct_url(year):
     url = f"https://uwservice.wisconsin.edu/docs/publications/pay-bw-calendar-{year}.pdf"
     
     return url , "url constructed successfully" , "green"
-
 
 
 def download_pdf(url):   
@@ -131,7 +128,7 @@ def merge_dfs(df_previous_year, df_current_year):
     Returns:
     - cleaned_df: A DataFrame that is the merged and cleaned result.
     - error_message: A string indicating if an error occurred.
-    - color: A string representing the color for display (e.g., "red" for error, "green" for success).
+    - color: A string representing the color for display (e.g., "red" for error, "green" for success).  
     """
     # Initialize error message and color
     error_message = ""

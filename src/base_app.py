@@ -1,9 +1,9 @@
 import customtkinter as ctk
 from login_page import LoginPage
-from main_menu import MainMenu
-from financial_menu import FinancialMenu
-from spreadsheet_generator import SpreadsheetGenerator
-from payroll_spreadsheet import PayrollSpreadsheet
+from main_menu_page import MainMenu
+from financial_menu_page import FinancialMenu
+from spreadsheet_generator_page import SpreadsheetGenerator
+from payroll_spreadsheet_page import PayrollSpreadsheet
 
 # Set the appearance mode to dark
 ctk.set_appearance_mode("dark")  # Options: "light", "dark", "system"
@@ -44,5 +44,3 @@ if __name__ == "__main__":
     app = BaseApp()
 
     app.mainloop()
-
-    

@@ -1,0 +1,19 @@
+# Byte-compiled files
+__pycache__/
+
+# Virtual environment
+venv/
+
+# IDEs and Editors
+.vscode/
+
+# Operating system files
+desktop.ini
+
+
+# Build artifacts
+dist/
+build/
+
+# Exclude personal settings
+*.iml

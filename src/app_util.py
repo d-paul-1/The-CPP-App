@@ -9,6 +9,7 @@ import pandas as pd
 
 COLOR_PALETTE = {
     "maroon": "C00000",
+    "yellow":"FFC000",
 
     #Banner Colors
     "lavender":"D5B8EA",

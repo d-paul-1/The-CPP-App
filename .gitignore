@@ -17,3 +17,5 @@ build/
 
 # Exclude personal settings
 *.iml
+
+important.txt

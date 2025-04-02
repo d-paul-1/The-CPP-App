@@ -1,14 +1,2 @@
-/my_app/
-│
-├── /assets/                  # Directory for resources like images, icons, etc.
-│   |── cpp_heart_logo.png    # Logo image file
-|   |── background.jpg        # Background image
-│
-├── /src/                     # Source code folder
-│   ├── __init__.py           # Initializes the 'src' package
-│   ├── base_window.py        # Contains the BaseWindow class
-│   ├── welcome_page.py       # Contains the WelcomePage class
-|   ├── main_menu_page.py     # Contains the Main menu Page class
-│   └── app.py                # Main entry point for your application
-│
-└── README.md 
+This Repository Contains Code that I developed over the span of a few months while working at the center for patient partnerships as an Admin and IT Assistant.
+Its main purpose is to imporve the time it take to generate payroll documents by automating 80% of the entire process.

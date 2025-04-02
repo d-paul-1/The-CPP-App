@@ -1,31 +1,6 @@
 # This file handles the code responsible for converting INPUT SHEET 1 TO 2
 
 from tkinter import filedialog
-
-def generate_input_sheet_two(save_directory, input_sheet_one_path):
-    """
-    Ensures a valid save directory is provided. If none is given, prompts the user to select one.
-
-    Args:
-        save_directory (str or None): The directory where the file should be saved. If None, user is prompted.
-        input_sheet_one_path (str): Path to the first input sheet (not used in this function but kept for context).
-
-    Returns:
-        str: The selected or provided save directory.
-    """
-    if not save_directory:
-        save_directory = filedialog.askdirectory(title="Select Folder to Save Payroll Spreadsheet") or ""
-
-    final_path = generate_input_sheet_2(input_sheet_one_path,save_directory)
-
-    return final_path
-
-
-##############################################################################################################################################################################
-
-# Code from code_generation.ipynb that need to be heabily cleaned 
-
-# THIS CELL IS THE COMPLETE CODE FOR IPS 1 -> IPS 2 
 import warnings
 from pandas.errors import SettingWithCopyWarning  # Import the warning class
 
@@ -40,8 +15,6 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, Alignment
 from datetime import datetime
 
-import importlib
-
 
 import pandas as pd
 import numpy as np
@@ -50,15 +23,19 @@ import re
 import openpyxl
 
 
-#sotring all the headings and its values in a list of tuples
-# Nomenclature = {"CONTENT OF HEADING", "ROW NUMBER", "COLUMN NUMBER"}
+def generate_input_sheet_two(save_directory, input_sheet_one_path):
 
-def generate_input_sheet_2(input_sheet_1_path,destination_path):
+    if not save_directory:
+        save_directory = filedialog.askdirectory(title="Select Folder to Save Payroll Spreadsheet") or ""
+
+    
+    # Creating Workbook
     wb = Workbook()
     wb.active
+
     year = "TEST"  #re.search(r'FY(\d{4})', input_sheet_1_path).group(1) if re.search(r'FY(\d{4})', input_sheet_1_path) else "TEST"
-    final_save_path = os.path.join(destination_path,get_save_name(f"CPP FY{year} Input Data Sheet 2 - ALL INPUT DATA"))
-    create_presets(wb,input_sheet_1_path,final_save_path)
+    final_save_path = os.path.join(save_directory,get_save_name(f"CPP FY{year} Input Data Sheet 2 - ALL INPUT DATA"))
+    create_presets(wb,input_sheet_one_path,final_save_path)
 
     wb.save(final_save_path)
     wb.close()
@@ -85,7 +62,7 @@ def create_presets(wb, input_sheet_1_path,input_sheet_2_path):
 
     # Set width of the first 200 columns and height of the first 200 rows
     for col in range(1, 201):  # Columns A to GR
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 30
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 40
     for row in range(3, 201):  # Rows 1 to 200
         ws.row_dimensions[row].height = 25
 
@@ -96,6 +73,13 @@ def create_presets(wb, input_sheet_1_path,input_sheet_2_path):
     print("PRESETS COMPLETED")
 
     return
+
+ 
+
+#sotring all the headings and its values in a list of tuples
+# Nomenclature = {"CONTENT OF HEADING", "ROW NUMBER", "COLUMN NUMBER"}
+
+
 
 def print_funding_string_data(input_sheet_1_path, wb):
      # Initialize an empty list to store DataFrames
@@ -123,7 +107,6 @@ def print_funding_string_data(input_sheet_1_path, wb):
         start_row=103,
         buffer=3
     )
-
     return
 
 def process_dfs_based_on_identifier_funding_strings(dfs):
@@ -148,7 +131,6 @@ def process_dfs_based_on_identifier_funding_strings(dfs):
         if matched_key:
             # Get the corresponding desired column list
             desired_columns = desired_columns_map[matched_key]
-
 
             # Ensure all desired columns are present in the DataFrame
             for col in desired_columns:
@@ -326,6 +308,7 @@ def add_blank_rows(df, blank_row_count=3):
             # Add blank rows
             new_rows.append(pd.Series([np.nan] * len(df.columns), index=df.columns))
 
+
     return pd.DataFrame(new_rows, columns=df.columns)
 
 
@@ -403,18 +386,6 @@ def write_tables_to_excel(wb, sheet_name, tables_list, start_row=32, buffer=3):
     print(f"All tables written to sheet '{sheet_name}' successfully.")
 
 
-
-
-
-
-
-
-
-
-
-###############################################################################################################################################################################
-
-# CODE FROM APU UTIL THAT HAS TO BE CLEANED LATER 
 
 # This file contains Utility Functions that are used all over the app
 

@@ -67,20 +67,21 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         back_button = ctk.CTkButton(header_frame, text="Back to Spreadsheet Generator", command=self.confirm_exit)
         back_button.pack(side=ctk.RIGHT, padx=10, pady=10)
 
-        # Data Input sheet 1 Template download button
-        data_input_sheet_one_template_download_button = ctk.CTkButton(header_frame, text="Download Input Sheet 1" , command=self.download_input_sheet_one)
-        data_input_sheet_one_template_download_button.pack(side=ctk.RIGHT, padx=10, pady=10)
-
-
         # Button to store save directory
-        self.main_save_folder_button = ctk.CTkButton(header_frame, text="Choose Save Destination", command= self.set_save_folder )
-        self.main_save_folder_button.pack(side=ctk.RIGHT, padx=10, pady=10)
+        self.main_save_folder_button = ctk.CTkButton(header_frame, text="1. Choose Save Destination", command= self.set_save_folder )
+        self.main_save_folder_button.pack(side=ctk.LEFT, padx=25, pady=10)
+
+        # Data Input sheet 1 Template download button
+        data_input_sheet_one_template_download_button = ctk.CTkButton(header_frame, text="2. Download Input Sheet 1" , command=self.download_input_sheet_one)
+        data_input_sheet_one_template_download_button.pack(side=ctk.LEFT, padx=10, pady=10)
+
+
 
 
     def set_save_folder(self):
         self.has_unsaved_changes = True
         self.main_save_folder = filedialog.askdirectory( title="Select Folder to Save Files" )
-        self.main_save_folder_button.configure(text="Change Save Destination")  # Updating button text
+        self.main_save_folder_button.configure(text="1. Change Save Destination")  # Updating button text
         self.update_status(f"Save Directory set as {self.main_save_folder}" , "white")
         
     def confirm_exit(self):
@@ -164,14 +165,18 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         #self.input_sheet_one_button = ctk.CTkButton(input_frame,text="Upload Input Sheet 1", command=lambda: self.upload_input_sheet("input_sheet_one", "Input Sheet 1"))
         self.input_sheet_one_button = ctk.CTkButton(
         input_frame,
-        text="Upload Input Sheet 1",
-        command=lambda: setattr(self, "input_sheet_one_path", self.upload_input_sheet("input_sheet_one", "Input Sheet 1"))
+        text="3. Upload Input Sheet 1",
+        command=lambda: setattr(self, "input_sheet_one_path", self.upload_input_sheet("input_sheet_one", "Input Sheet 1", "3."))
 )
         self.input_sheet_one_button.pack(pady=10)
 
         # Button to Generate Input Sheet 2
-        self.generate_input_sheet_two_button = ctk.CTkButton(input_frame,text="Generate Input Sheet 2", 
-        command=lambda: os.startfile(pisc.generate_input_sheet_two(save_directory=self.main_save_folder, input_sheet_one_path=self.input_sheet_one_path)) )
+        self.generate_input_sheet_two_button = ctk.CTkButton(input_frame,text="4. Generate Input Sheet 2", 
+        command=lambda:[ #This lambda function calls the generate input sheet 2 command from payroll_input_sheet_conversion.py and change the button text to re-generate
+            os.startfile(pisc.generate_input_sheet_two(save_directory=self.main_save_folder, input_sheet_one_path=self.input_sheet_one_path)),
+            self.generate_input_sheet_two_button.configure(text="4. Re-generate Input Sheet 2")
+        ] 
+        )
         self.generate_input_sheet_two_button.pack(pady=10)
 
         # Blank Label to Display Input Sheet 2 path
@@ -179,7 +184,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.input_sheet_two_label.pack(pady=10)
 
         # Button to Upload Input Sheet 2
-        self.input_sheet_two_button = ctk.CTkButton(input_frame,text="Upload Input Sheet 2", command=lambda: self.upload_input_sheet("input_sheet_two", "Input Sheet 2"))
+        self.input_sheet_two_button = ctk.CTkButton(input_frame,text="5. Upload Input Sheet 2", command=lambda: self.upload_input_sheet("input_sheet_two", "Input Sheet 2", "5."))
         self.input_sheet_two_button.pack(pady=10)
 
 
@@ -188,13 +193,13 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         input_label.pack(pady=10)
 
         # Define a variable for the option menu
-        self.optionmenu_var = ctk.StringVar(value="Select an option")
+        self.optionmenu_var = ctk.StringVar(value="6. Select an option")
 
         # Option Menu for Payschedule Load mathods
         optionmenu = ctk.CTkOptionMenu(
             input_frame,
             variable=self.optionmenu_var,
-            values=["Select an option", "Automatic", "URL", "Upload"],
+            values=["6. Select an option", "Automatic", "URL", "Upload"],
             command=self.optionmenu_callback
         )
         optionmenu.pack(pady=10)
@@ -246,8 +251,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.progress_bar = ctk.CTkProgressBar(input_frame)
         self.progress_bar.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=10)
         self.progress_bar.set(0)  # Start at 0%
-
-
 
 
 
@@ -333,7 +336,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.url_entry_year_1.pack_forget()
         self.url_entry_year_2.pack_forget()
 
-        if choice == "Select an option":
+        if choice == "6. Select an option":
             self.options_state=0
             self.option_menu_selection_reset()
             #self.url_entry_year_2.pack_forget()
@@ -379,7 +382,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
             self.download_pay_button.pack(pady=10) 
 
-    def upload_input_sheet(self, sheetname, print_text):
+    def upload_input_sheet(self, sheetname, print_text, step_no):
         """
         Uploads an input sheet, dynamically updating associated UI elements.
 
@@ -405,7 +408,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Update the label text if label exists
         if label:
-            label.configure(text=f"Upload {print_text}:")
+            label.configure(text=f"{step_no} Upload {print_text}:")
 
         # Set the has_unsaved_changes flag to True
         self.has_unsaved_changes = True
@@ -422,7 +425,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.update_status(f"{print_text} Uploaded Successfully", "white")
 
         if button:
-            button.configure(text=f"Re-upload {print_text}")
+            button.configure(text=f"{step_no} Re-upload {print_text}")
 
         return path  # Return the file path
 
@@ -734,7 +737,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
     def reset_header_frame(self):
         """ This function resets the header frame to its original state
         """
-        self.main_save_folder_button.configure(text="Choose Save Destination")
+        self.main_save_folder_button.configure(text="1. Choose Save Destination")
 
     def reset_input_frame(self):
         """ This function resets the input frame to its original state
@@ -742,13 +745,18 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Master Data Input Field
         self.input_sheet_one_label.configure(text="") # Setting the path label clear
-        self.input_sheet_one_button.configure(text="Upload Input Sheet 1")# Upload button
+        self.input_sheet_one_button.configure(text="3. Upload Input Sheet 1")# Upload button
+
+
 
         self.input_sheet_two_label.configure(text="") # Setting the path label clear
-        self.input_sheet_two_button.configure(text="Upload Input Sheet 2")# Upload button
+        self.input_sheet_two_button.configure(text="5. Upload Input Sheet 2")# Upload button
+
+        # Resetting the generate input sheet 2 button
+        self.generate_input_sheet_two_button.configure(text="4. Generate Input Sheet 2")
 
         # Option Menu Reset
-        self.optionmenu_var.set("Select an option")  # Reset option menu
+        self.optionmenu_var.set("6. Select an option")  # Reset option menu
         self.option_menu_selection_reset()
 
         self.download_pay_button.pack_forget() # hiding the load pay schedule button

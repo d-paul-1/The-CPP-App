@@ -1,8 +1,8 @@
 import customtkinter as ctk
 from tkinter import filedialog, messagebox  # Import filedialog to handle file uploads and messagebox for popups
 
-import utility.payroll_processing as pp
-import utility.salaries_tab_generation as stg
+import utility.payschedule_processing as pp
+import utility.generate_payroll_spreadsheet as gps
 import utility.payroll_input_sheet_conversion as pisc
 
 import pandas as pd
@@ -22,13 +22,21 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Variables to store main values
         self.has_unsaved_changes = False
-        self.master_data_input_sheet_path = None  # Store the path for the master data input sheet
         self.pay_schedules_df = pd.DataFrame()  # Store the path for Year 1 of the pay schedule
         self.pay_periods = 0
         self.options_state = None # Variable that tracks which option from the option menu was selected
+
+        self.y1 = 0
+        self.y2 = 0
+    
+
+        # Here are global variables for the important files and folders
         self.main_save_folder = None
+
         self.input_sheet_one_path = None
         self.input_sheet_two_path = None
+
+        self.payroll_spreadsheet_path = None
 
         # Making the page
         self.build_page()
@@ -67,6 +75,15 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         back_button = ctk.CTkButton(header_frame, text="Back to Spreadsheet Generator", command=self.confirm_exit)
         back_button.pack(side=ctk.RIGHT, padx=10, pady=10)
 
+        # Add to generate_input_frame method
+        self.clear_display_button = ctk.CTkButton(
+            header_frame,
+            text="Clear Output",
+            command=self.clear_output_display,
+            fg_color="gray"  # Optional: give it a distinct color
+        )
+        self.clear_display_button.pack(side=ctk.RIGHT, padx=10, pady=10)
+
         # Button to store save directory
         self.main_save_folder_button = ctk.CTkButton(header_frame, text="1. Choose Save Destination", command= self.set_save_folder )
         self.main_save_folder_button.pack(side=ctk.LEFT, padx=25, pady=10)
@@ -92,6 +109,17 @@ class PayrollSpreadsheet(ctk.CTkFrame):
                 self.reset_and_back()
         else:
             self.reset_and_back()
+
+    def enable_editing(self):
+        """Enable editing in the text box."""
+        self.text_box.configure(state="normal")  # Enable editing
+        self.update_status("Editing enabled. Make changes and click 'Save Changes' when done.", "white")
+
+        # Show the Save Changes button
+        self.save_button.pack(pady=10)
+
+    
+
 
     def download_input_sheet_one(self):
         """
@@ -143,6 +171,31 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.update_status("An error occurred during the download process.", "red")
 
 
+    def save_changes(self):
+        """Save changes made in the text box back to the DataFrame."""
+        try:
+            # Convert the edited text back into a DataFrame
+            edited_df = self.get_dataframe_from_display()
+            print(edited_df)
+
+
+            if edited_df.empty:
+                self.update_status("No valid data to save. Please check your edits.", "red")
+                return
+
+            # Update the pay_schedules_df variable
+            self.pay_schedules_df = edited_df
+            self.pay_periods = pp.get_payperiod(self.pay_schedules_df)  # Update the pay periods based on the new DataFrame
+            self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
+            self.update_status("Changes saved successfully.", "green")
+
+            # Disable editing again
+            self.text_box.configure(state="disabled")
+            self.save_button.pack_forget()  # Hide the Save Changes button
+        except Exception as e:
+            self.update_status(f"Failed to save changes: {e}", "red")
+    
+
 
     def generate_input_frame(self):
         """This Function Creates the Input Frame along with its relevant widgets
@@ -184,7 +237,11 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.input_sheet_two_label.pack(pady=10)
 
         # Button to Upload Input Sheet 2
-        self.input_sheet_two_button = ctk.CTkButton(input_frame,text="5. Upload Input Sheet 2", command=lambda: self.upload_input_sheet("input_sheet_two", "Input Sheet 2", "5."))
+        self.input_sheet_two_button = ctk.CTkButton(
+            input_frame,
+            text="5. Upload Input Sheet 2", 
+            command=lambda: setattr(self, "input_sheet_two_path",self.upload_input_sheet("input_sheet_two", "Input Sheet 2", "5."))
+        )
         self.input_sheet_two_button.pack(pady=10)
 
 
@@ -238,6 +295,25 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.download_pay_button = ctk.CTkButton(input_frame,text="Load Pay Schedules", command= lambda: self.download_pay_schedules(self.options_state))
         self.download_pay_button.pack(pady=10)
         self.download_pay_button.pack_forget()
+
+        # Add Edit Button beside Load Pay Schedules
+        self.edit_button = ctk.CTkButton(
+            input_frame,
+            text="Edit",
+            command=self.enable_editing
+        )
+        self.edit_button.pack(pady=10)
+        self.edit_button.pack_forget()  # Initially hide the button
+
+        # Add Save Changes Button
+        self.save_button = ctk.CTkButton(
+            input_frame,
+            text="Save Changes",
+            command=self.save_changes,
+            fg_color="red"  # Set the button color to red
+        )
+        self.save_button.pack(pady=10)
+        self.save_button.pack_forget()  # Initially hide the button
 
         self.pay_periods_label=ctk.CTkLabel(input_frame, text = "")
         self.pay_periods_label.pack(pady=10)
@@ -356,6 +432,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.automatic_entry_year_2.pack(pady=10)
 
             self.download_pay_button.pack(pady=10)  
+            self.edit_button.pack(pady=10)
 
         elif choice == "URL":
             # Show both entries for the two halves of the year with appropriate placeholders
@@ -370,6 +447,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.url_entry_year_2.pack(pady=10)
 
             self.download_pay_button.pack(pady=10) 
+            self.edit_button.pack(pady=10)
 
 
         elif choice == "Upload":
@@ -381,6 +459,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.upload_label_year_2 ,"pdf")  # Call the file upload function
 
             self.download_pay_button.pack(pady=10) 
+            self.edit_button.pack(pady=10)
 
     def upload_input_sheet(self, sheetname, print_text, step_no):
         """
@@ -449,7 +528,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.display_dataframe(self.pay_schedules_df)
             self.progress_bar.set(1)
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
-            self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
+            self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
             successfull =True
 
@@ -462,7 +541,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.display_dataframe(self.pay_schedules_df)
             self.progress_bar.set(1)
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
-            self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
+            self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
             successfull =True
 
@@ -473,7 +552,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.display_dataframe(self.pay_schedules_df)
             self.progress_bar.set(1)
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
-            self.pay_periods_label.configure(text= f"number of pay periods: {self.pay_periods}")
+            self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
             successfull =True
 
@@ -673,6 +752,78 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         else:
             messagebox.showinfo("DataFrame", "The DataFrame is empty or None.")  # Han
 
+    # def get_dataframe_from_display(self):
+    #     """This function converts the text displayed in the output textbox back into a pandas DataFrame.
+
+    #     Returns:
+    #         pd.DataFrame: A DataFrame reconstructed from the text in the textbox.
+    #     """
+    #     # Enable the textbox temporarily to read its content
+    #     self.text_box.configure(state="normal")
+    #     text_content = self.text_box.get("1.0", "end").strip()  # Get all text and strip trailing newlines
+    #     self.text_box.configure(state="disabled")  # Set back to read-only mode
+
+    #     if not text_content:
+    #         messagebox.showinfo("DataFrame", "The textbox is empty. Cannot convert to DataFrame.")
+    #         return pd.DataFrame()  # Return an empty DataFrame
+
+    #     try:
+    #         # Split the text into lines
+    #         lines = text_content.split("\n")
+    #         # The first line is assumed to be the header
+    #         headers = lines[0].split()
+    #         # The remaining lines are the data
+    #         data = [line.split() for line in lines[1:]]
+
+    #         # Convert to a DataFrame
+    #         df = pd.DataFrame(data, columns=headers)
+    #         return df
+    #     except Exception as e:
+    #         messagebox.showerror("Error", f"Failed to convert text to DataFrame:\n{e}")
+    #         return pd.DataFrame()  # Return an empty DataFrame in case of error
+
+    def get_dataframe_from_display(self):
+        """This function converts the text displayed in the output textbox back into a pandas DataFrame.
+
+        Returns:
+            pd.DataFrame: A DataFrame reconstructed from the text in the textbox.
+        """
+        # Enable the textbox temporarily to read its content
+        self.text_box.configure(state="normal")
+        text_content = self.text_box.get("1.0", "end").strip()
+        self.text_box.configure(state="disabled")
+
+        if not text_content:
+            messagebox.showinfo("DataFrame", "The textbox is empty. Cannot convert to DataFrame.")
+            return pd.DataFrame()
+
+        try:
+            # Split the text into lines
+            lines = text_content.split("\n")
+            
+            # The first line contains headers
+            headers = ["Pay Period", "Pay Period Dates"]
+            
+            # Process the data lines
+            data = []
+            for line in lines[1:]:
+                # Find the position of the first date (looking for MM/DD/YYYY pattern)
+                date_pos = line.find(next(d for d in line.split() if '/' in d))
+                
+                # Split line into Pay Period and Pay Period Dates
+                pay_period = line[:date_pos].strip()
+                pay_period_dates = line[date_pos:].strip()
+                
+                data.append([pay_period, pay_period_dates])
+
+            # Convert to DataFrame
+            df = pd.DataFrame(data, columns=headers)
+            return df
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to convert text to DataFrame:\n{e}")
+            return pd.DataFrame()
+
         
 
     def update_progress(self, step, total_steps):
@@ -760,6 +911,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.option_menu_selection_reset()
 
         self.download_pay_button.pack_forget() # hiding the load pay schedule button
+        self.edit_button.pack_forget()  # Hide the Edit button
+        self.save_button.pack_forget()  # Hide the Save Changes button
 
     def reset_display_frame(self):
         """ This function resets the input frame to its original state
@@ -822,6 +975,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Download button
         self.download_pay_button.pack_forget()
+        self.edit_button.pack_forget()  # Hide the Edit button
+        self.save_button.pack_forget()  # Hide the Save Changes button
 
         #Generate Payroll Spreadsheet button
         self.generate_payroll_spreadsheet_button.pack_forget()
@@ -848,27 +1003,52 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
     def generate_payroll_spreadsheet(self):
 
+    
         try:
-            # Prompt the user to select a folder
-            save_folder = filedialog.askdirectory(
-                title="Select Folder to Save Payroll Spreadsheet"
-            )
 
-            if not save_folder:
+            if not self.main_save_folder:
+            # Prompt the user to select a folder
+                self.main_save_folder = filedialog.askdirectory(
+                    title="Select Folder to Save Payroll Spreadsheet"
+                )
+
+            if not self.main_save_folder:
                 # User canceled the selection
                 self.update_status("Operation canceled. No folder selected.","White")
                 return
+            
+            print("HELOOOO")
+            print(self.input_sheet_two_path)
 
             # Generate the payroll spreadsheet
-            self.payroll_file_path = stg.generate_salaries_tab(master_data_input_sheet_path=self.master_data_input_sheet_path, 
-                                                     save_path=save_folder,
-                                                     pay_periods=self.pay_periods)
-
+            self.payroll_spreadsheet_path = gps.generate_payroll_spreadsheet(
+                save_directory= self.main_save_folder,
+                inputsheet_two_path= self.input_sheet_two_path,
+                pay_schedule= self.pay_schedules_df,
+                num_pay_periods= self.pay_periods
+            )
+            
             # Notify the user
-            self.update_status(f"Payroll spreadsheet saved successfully at {self.payroll_file_path}", "Green")
+            self.update_status(f"Payroll spreadsheet saved successfully at {self.payroll_spreadsheet_path}", "Green")
+
+            os.startfile(self.payroll_spreadsheet_path)
 
         except Exception as e:
             # Handle any errors
             self.update_status(f"An error occurred while generating the payroll spreadsheet:\n{e}" , "Red")
 
-
+    def clear_output_display(self):
+        """
+        Clears the output display text box and resets it to its initial state.
+        """
+        # Enable editing temporarily
+        self.text_box.configure(state="normal")
+        
+        # Clear all content
+        self.text_box.delete("1.0", "end")
+        
+        # Disable editing again
+        self.text_box.configure(state="disabled")
+        
+        # Update status
+        self.update_status("Output display cleared", "white")

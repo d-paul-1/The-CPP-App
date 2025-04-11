@@ -275,6 +275,7 @@ def print_cpp_employees_and_salary_data(wb, start_row, input_sheet_1_path):
         tables_list=  df_list,
         start_row=start_row_offset,
         base_table_name="employee_data",
+        mode= 2, 
         buffer=3
     )
 
@@ -329,7 +330,7 @@ def print_colas(wb, start_row):
         sheet_name="USER INPUT",
         tables_list=[salaried_employees_df],
         start_row=start_row_offset,
-        base_table_name="colas",
+        base_table_name="colas_eligible",
         start_col=4,
         buffer=3
     )
@@ -346,7 +347,7 @@ def print_colas(wb, start_row):
         sheet_name="USER INPUT",
         tables_list=[df],
         start_row=start_row_offset,
-        base_table_name="colas",
+        base_table_name="colas_info",
         buffer=3
     )
 
@@ -403,7 +404,7 @@ def print_funding_strings_and_accounting_salary(wb, start_row, input_sheet_1_pat
         sheet_name="USER INPUT",
         tables_list=  df_list,
         start_row=start_row_offset,
-        base_table_name= "funding_strings",
+        base_table_name= "funding_strings_info",
         buffer=3
     )
 
@@ -431,7 +432,7 @@ def print_funding_strings_and_accounting_salary(wb, start_row, input_sheet_1_pat
         sheet_name="USER INPUT",
         tables_list=[df_1],
         start_row=start_row_offset,
-        base_table_name="funding_strings",
+        base_table_name="funding_strings_accounting",
         start_col=10,
         buffer=3
     )
@@ -462,7 +463,7 @@ def print_funding_strings_and_accounting_salary(wb, start_row, input_sheet_1_pat
         sheet_name="USER INPUT",
         tables_list=  [employees_df],
         start_row=start_row_offset,
-        base_table_name= "funding_strings",
+        base_table_name= "funding_strings_per_employee",
         start_col= 17,
         buffer=3
     )
@@ -508,7 +509,7 @@ def print_funding_strings_and_accounting_non_salary(wb, start_row):
         sheet_name="USER INPUT",
         tables_list=[df],
         start_row=start_row_offset,
-        base_table_name="funding_strings",
+        base_table_name="funding_strings_non_salary_info",
         buffer=3
     )
 
@@ -524,7 +525,7 @@ def print_funding_strings_and_accounting_non_salary(wb, start_row):
         sheet_name="USER INPUT",
         tables_list=[df_1],
         start_row=start_row_offset,
-        base_table_name="fund_acc",
+        base_table_name="funding_strings_non_salary_fund_accounting",
         start_col=9,
         buffer=3
     )
@@ -583,8 +584,8 @@ def process_dfs_based_on_identifier(dfs, desired_columns_map):
             processed_columns = [identifier] + [col for col in desired_columns if col in df.columns]
             df = df[processed_columns]
 
-            if matched_key == "salaried employees":
-                df = add_blank_rows(df, 3)
+            #if matched_key == "salaried employees": COMMENTING THIS OUT SO THAT IT DOESDNT CAUSE ISSUE IN THE SALARIES TAB OF THE PAYROLL SHEET AS ALL THE EMPLOYEES NEED 4 ROWS
+            df = add_blank_rows(df, 3)
 
             processed_dfs.append(df)
         else:
@@ -620,7 +621,7 @@ def add_blank_rows(df, blank_row_count=3):
 
 
 
-def write_tables_to_excel(wb, sheet_name, tables_list, start_row, base_table_name, start_col= 1, buffer=3):
+def write_tables_to_excel(wb, sheet_name, tables_list, start_row, base_table_name, mode=1, start_col= 1, buffer=3):
     """
     Write a list of DataFrames to an Excel sheet as tables.
 
@@ -648,11 +649,14 @@ def write_tables_to_excel(wb, sheet_name, tables_list, start_row, base_table_nam
             print(f"DataFrame at index {idx} has duplicate column headers. Skipping.")
             continue
 
-        # Use the first column header as the base for the table name
-        first_header = str(df.columns[0])
-        # Sanitize the table name
-        sanitized_header = ''.join(e if e.isalnum() else '_' for e in first_header)
-        table_name = f"{base_table_name}Table_{sanitized_header}_{idx + 1}"
+        if mode==2:
+            # Use the first column header as the base for the table name
+            first_header = str(df.columns[0])
+            # Sanitize the table name
+            sanitized_header = ''.join(e if e.isalnum() else '_' for e in first_header)
+            table_name = f"{base_table_name}_{sanitized_header}"
+        else :
+            table_name = f"{base_table_name}"
 
         # Define the range for the table
         start_col = start_col  

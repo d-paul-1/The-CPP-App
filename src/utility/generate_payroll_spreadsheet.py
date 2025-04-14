@@ -34,17 +34,30 @@ COLOR_PALETTE = {
 
 # FORMATING STYLES
 
+# General format
+general_style = NamedStyle(name="general")
+general_style.number_format = 'General'
+
+# Accounting format
+accounting_style = NamedStyle(name="accounting")
+accounting_style.number_format = '_("$"* #,##0.00_);_("$"* \\(#,##0.00\\);_("$"* "-"??_);_(@_)'
+
+
 percentage_style = NamedStyle(name="percentage")
 percentage_style.number_format = '0.00%'
 
 date_style = NamedStyle(name="date_style")
-date_style.number_format = 'yyyy-mm-dd;@'
+date_style.number_format = 'mm/dd/yyyy'
 
 # accounting formating
 accounting_style = '_("$"* #,##0.00_);_("$"* \\(#,##0.00\\);_("$"* "-"??_);_(@_)'
 
 general_style = NamedStyle(name="general")
 general_style.number_format = 'General'
+
+HEADER_ROWS = []  # Global list to store header row indices
+
+
 
 def generate_payroll_spreadsheet(save_directory, inputsheet_two_path, pay_schedule,num_pay_periods):
 
@@ -57,7 +70,7 @@ def generate_payroll_spreadsheet(save_directory, inputsheet_two_path, pay_schedu
 
     # Extracting Y1, Y2, Start, and End
     y1 = pay_schedule['Start Date'].min().year
-    y2 = pay_schedule['End Date'].max().year
+    y2 = y1 + 1
     start_date = pay_schedule['Start Date'].min().strftime('%m/%d/%Y')
     end_date = pay_schedule['End Date'].max().strftime('%m/%d/%Y')
 
@@ -101,25 +114,27 @@ def generate_salaries_tab(wb,input_sheet_two_path, params_df):
 
 def salaries_tab_presets(ws,wb,input_sheet_two_path, params_df):
 
-
     # Set width of the first 200 columns and height of the first 200 rows
     for col in range(1, 201):  # Columns A to GR
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 40
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 20
     for row in range(3, 201):  # Rows 1 to 200
         ws.row_dimensions[row].height = 25
 
-     # TITLE SETTINGS
+    ws.column_dimensions[openpyxl.utils.get_column_letter(1)].width = 26
+    ws.column_dimensions[openpyxl.utils.get_column_letter(3)].width = 7
+
+    # TITLE SETTINGS
     ws.row_dimensions[3].height= 28.50
     title_cell = ws.cell(row=3, column=1)
     title_cell.value = f"{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} SALARY & FRINGE W/COLAS"
     title_cell.font = Font(size=22, bold=True)
 
     # TIME STAMP SETTINGS
-    time_stamp_cell = ws.cell(row=3, column=3)
+    time_stamp_cell = ws.cell(row=3, column=5)
     apply_color(time_stamp_cell, "maroon")
     time_stamp_cell.value = "Generated on " + datetime.now().strftime("%b-%d-%Y") + " at " + datetime.now().strftime("%H:%M:%S")
     time_stamp_cell.font = Font(size=14, color="FFFFFF", bold=True)  
-    ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=4)
+    ws.merge_cells(start_row=3, start_column=5, end_row=3, end_column=7)
 
     # FY BANNER SETTINGS
     ws.row_dimensions[1].height = 50.25
@@ -175,7 +190,7 @@ def salaries_tab_presets(ws,wb,input_sheet_two_path, params_df):
         1: {"value": f"{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} Fringe - Student hourly", "font": font_blue59},                                                                # Column A (1)
         2: {"value": fringe_df.iloc[0,4], "style": percentage_style, "fill": "cyan"},      # Column C (3)
         4: {"value": f"{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} # Total Days", "font": font_blue59},                                                                          # Column F (6)
-        5: {"value": "=(E6-E5)+1", "fill": "cyan"},                                                                                                 # Column G (7)
+        5: {"value": "=(E6-E5)+1", "style": general_style,"fill": "cyan"},                                                                                                 # Column G (7)
     },
     9: {
         4: {"value": f"{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} PAY PERIODS", "font": font_blue59},                                                                           # Column F (6)
@@ -207,6 +222,25 @@ def salaries_tab_presets(ws,wb,input_sheet_two_path, params_df):
     current_row = 12  # starting row
     for print_func in print_functions:
             current_row = print_func(ws,wb,input_sheet_two_path,params_df,fringe_df, current_row)
+
+
+      # Format specific columns
+    date_format_columns = ['E', 'F']  # Add columns that need date formatting
+    accounting_format_columns = ['G','H', 'I', 'K','L', 'M', 'N', 'O', 'P', 'Q']  # Add columns that need accounting formatting
+
+    # Apply date formatting
+    for col in date_format_columns:
+        format_column(ws, col, date_style)
+
+    # Apply accounting formatting
+    for col in accounting_format_columns:
+        format_column(ws, col, accounting_style)
+
+    ws["E7"].number_format = general_style.number_format
+
+
+    # Add this line at the end
+    format_headers(ws)
     
 
 def print_salaried_employee(ws,wb,input_sheet_two_path,params_df,fringe_df, start_row):
@@ -333,6 +367,10 @@ def print_header(ws, heading, row):
         heading (str): The text to display as the heading.
         row (int): The row number where the heading should be placed.
     """
+
+    # Add the row number to our global list
+    HEADER_ROWS.append(row+2) # +2 because the table is 2 rows below the header.
+
     # Define style
     heading_font = Font(bold=True, size=12)
     heading_alignment = Alignment(horizontal="left", vertical="center")
@@ -664,3 +702,40 @@ def restructure_dataframe(df,  params_df, data_ips2):
 
     
     return new_df
+
+
+def format_headers(ws):
+    """
+    Applies text wrapping to all header rows from column A to Q.
+    """
+    wrap_alignment = Alignment(wrap_text=True, vertical='center')
+    
+    for row in HEADER_ROWS:
+        for col in range(1, 18):  # Columns A to Q (1 to 17)
+            cell = ws.cell(row=row, column=col)
+            cell.alignment = wrap_alignment
+
+        ws.row_dimensions[row].height= 45
+
+
+def format_column(ws, column, style):
+    """
+    Format an entire column's number format while preserving other formatting
+    
+    Args:
+        ws: worksheet
+        column: column letter (e.g., 'A') or number (1)
+        style: NamedStyle object or number format string
+    """
+    if isinstance(column, str):
+        col_idx = openpyxl.utils.column_index_from_string(column)
+    else:
+        col_idx = column
+
+    for row in range(1, ws.max_row + 1):
+        cell = ws.cell(row=row, column=col_idx)
+        # Only apply the number format, preserving other styles
+        if isinstance(style, NamedStyle):
+            cell.number_format = style.number_format
+        else:
+            cell.number_format = style

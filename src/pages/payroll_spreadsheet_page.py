@@ -116,7 +116,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.update_status("Editing enabled. Make changes and click 'Save Changes' when done.", "white")
 
         # Show the Save Changes button
-        self.save_button.pack(pady=10)
+        self.save_button.pack(side=ctk.LEFT, padx=5)
 
     
 
@@ -200,10 +200,19 @@ class PayrollSpreadsheet(ctk.CTkFrame):
     def generate_input_frame(self):
         """This Function Creates the Input Frame along with its relevant widgets
         """
-        # Input Frame
-        input_frame = ctk.CTkFrame(self, width=300, height=2000)
-        input_frame.pack(side=ctk.LEFT, padx=20, pady=20)
-        input_frame.pack_propagate(False)
+
+        # Create a container frame
+        container_frame = ctk.CTkFrame(self, width=300, height=2000)
+        container_frame.pack(side=ctk.LEFT, padx=20, pady=20)
+        container_frame.pack_propagate(False)
+
+        # Create scrollable frame inside container
+        input_frame = ctk.CTkScrollableFrame(
+            container_frame,
+            width=280,
+            height=1900
+        )
+        input_frame.pack(expand=True, fill="both", padx=5, pady=5)
 
 
         # Input sheet Label
@@ -296,24 +305,33 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.download_pay_button.pack(pady=10)
         self.download_pay_button.pack_forget()
 
+        # Create a frame for the button pair
+        self.button_frame = ctk.CTkFrame(input_frame)
+        self.button_frame.pack(pady=10)
+
         # Add Edit Button beside Load Pay Schedules
         self.edit_button = ctk.CTkButton(
-            input_frame,
+            self.button_frame,
             text="Edit",
             command=self.enable_editing
         )
-        self.edit_button.pack(pady=10)
+        self.edit_button.pack(side=ctk.LEFT, padx=5)
         self.edit_button.pack_forget()  # Initially hide the button
 
         # Add Save Changes Button
         self.save_button = ctk.CTkButton(
-            input_frame,
+            self.button_frame,
             text="Save Changes",
             command=self.save_changes,
             fg_color="red"  # Set the button color to red
         )
-        self.save_button.pack(pady=10)
+        self.save_button.pack(side=ctk.LEFT, padx=5)
         self.save_button.pack_forget()  # Initially hide the button
+
+        # Hide the button frame initially
+        self.button_frame.pack_forget()
+
+
 
         self.pay_periods_label=ctk.CTkLabel(input_frame, text = "")
         self.pay_periods_label.pack(pady=10)
@@ -323,10 +341,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.generate_payroll_spreadsheet_button.pack(pady=10)
         self.generate_payroll_spreadsheet_button.pack_forget()
 
-        # Initialize progress bar
-        self.progress_bar = ctk.CTkProgressBar(input_frame)
-        self.progress_bar.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=10)
-        self.progress_bar.set(0)  # Start at 0%
 
 
 
@@ -431,8 +445,10 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.automatic_entry_year_2.configure(placeholder_text="Enter Year 2 of FY (Jan-Jun):")
             self.automatic_entry_year_2.pack(pady=10)
 
-            self.download_pay_button.pack(pady=10)  
-            self.edit_button.pack(pady=10)
+            self.download_pay_button.pack(pady=10)
+
+            self.button_frame.pack(pady=10)
+            self.edit_button.pack(side=ctk.LEFT, padx=5)
 
         elif choice == "URL":
             # Show both entries for the two halves of the year with appropriate placeholders
@@ -447,7 +463,9 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.url_entry_year_2.pack(pady=10)
 
             self.download_pay_button.pack(pady=10) 
-            self.edit_button.pack(pady=10)
+
+            self.button_frame.pack(pady=10)
+            self.edit_button.pack(side=ctk.LEFT, padx=5)
 
 
         elif choice == "Upload":
@@ -458,8 +476,10 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.year1_pdf = self.upload_file("Select a pay schedule for Year 1 of FY (Jul-Dec):", self.upload_label_year_1,"pdf") 
             self.year2_pdf = self.upload_file("Select a pay schedule for Year 2 of FY (Jan-Jun):", self.upload_label_year_2 ,"pdf")  # Call the file upload function
 
-            self.download_pay_button.pack(pady=10) 
-            self.edit_button.pack(pady=10)
+            self.download_pay_button.pack(pady=10)
+
+            self.button_frame.pack(pady=10) 
+            self.edit_button.pack(side=ctk.LEFT, padx=5)
 
     def upload_input_sheet(self, sheetname, print_text, step_no):
         """
@@ -526,7 +546,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_automatic(year1),self.process_automatic(year2))
             self.update_status(msg, color)
             self.display_dataframe(self.pay_schedules_df)
-            self.progress_bar.set(1)
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
             self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
@@ -539,7 +558,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_url(year1),self.process_url(year2))
             self.update_status(msg, color)
             self.display_dataframe(self.pay_schedules_df)
-            self.progress_bar.set(1)
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
             self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
@@ -550,7 +568,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_upload(self.year1_pdf),self.process_upload(self.year2_pdf))
             self.update_status(msg, color)
             self.display_dataframe(self.pay_schedules_df)
-            self.progress_bar.set(1)
             self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
             self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
             self.pay_periods_label.pack(pady=10)
@@ -605,8 +622,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         Returns:
             _type_: Pandas Df of payperiods
         """
-        total_steps=5
-        self.progress_bar.set(0)
         try:
             # Construct URL
             url, msg, color = pp.construct_url(year)
@@ -615,7 +630,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in URL construction
             if color == "red":
                 raise Exception("Error constructing URL. Please re-enter the year.")
-            self.update_progress(1, total_steps)
 
             # Download PDF
             pdf, msg, color = pp.download_pdf(url)
@@ -624,7 +638,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in downloading PDF
             if color == "red":
                 raise Exception("Error downloading PDF. Please re-enter the year.")
-            self.update_progress(2, total_steps)
 
             # Convert PDF to Word
             word, msg, color = pp.pdf_to_word(pdf)
@@ -633,7 +646,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in converting PDF to Word
             if color == "red":
                 raise Exception("Error converting PDF to Word. Please re-enter the year.")
-            self.update_progress(3, total_steps)
 
             # Convert Word to DataFrame
             df, msg, color = pp.word_to_df(word)
@@ -642,7 +654,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in converting Word to DataFrame
             if color == "red":
                 raise Exception("Error converting Word to DataFrame. Please re-enter the year.")
-            self.update_progress(4, total_steps)
 
             return df  # Return the DataFrame if everything was successful
 
@@ -660,8 +671,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         Returns:
             _type_: Pandas Df of payperiods
         """
-        total_steps=5
-        self.progress_bar.set(0)
         try:
             # Download PDF
             pdf, msg, color = pp.download_pdf(url)
@@ -670,7 +679,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in downloading PDF
             if color == "red":
                 raise Exception("Error downloading PDF. Please re-enter the year.")
-            self.update_progress(2, total_steps)
 
             # Convert PDF to Word
             word, msg, color = pp.pdf_to_word(pdf)
@@ -679,7 +687,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in converting PDF to Word
             if color == "red":
                 raise Exception("Error converting PDF to Word. Please re-enter the year.")
-            self.update_progress(3, total_steps)
 
             # Convert Word to DataFrame
             df, msg, color = pp.word_to_df(word)
@@ -688,7 +695,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in converting Word to DataFrame
             if color == "red":
                 raise Exception("Error converting Word to DataFrame. Please re-enter the year.")
-            self.update_progress(4, total_steps)
 
             return df  # Return the DataFrame if everything was successful
 
@@ -706,8 +712,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         Returns:
             _type_: Pandas Df of payperiods
         """
-        total_steps=5
-        self.progress_bar.set(0)
         try:
 
             # Convert PDF to Word
@@ -717,7 +721,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in converting PDF to Word
             if color == "red":
                 raise Exception("Error converting PDF to Word. Please re-enter the year.")
-            self.update_progress(3, total_steps)
 
             # Convert Word to DataFrame
             df, msg, color = pp.word_to_df(word)
@@ -726,7 +729,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             # Check for error in converting Word to DataFrame
             if color == "red":
                 raise Exception("Error converting Word to DataFrame. Please re-enter the year.")
-            self.update_progress(4, total_steps)
 
             return df  # Return the DataFrame if everything was successful
 
@@ -751,36 +753,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             self.text_box.configure(state="disabled")
         else:
             messagebox.showinfo("DataFrame", "The DataFrame is empty or None.")  # Han
-
-    # def get_dataframe_from_display(self):
-    #     """This function converts the text displayed in the output textbox back into a pandas DataFrame.
-
-    #     Returns:
-    #         pd.DataFrame: A DataFrame reconstructed from the text in the textbox.
-    #     """
-    #     # Enable the textbox temporarily to read its content
-    #     self.text_box.configure(state="normal")
-    #     text_content = self.text_box.get("1.0", "end").strip()  # Get all text and strip trailing newlines
-    #     self.text_box.configure(state="disabled")  # Set back to read-only mode
-
-    #     if not text_content:
-    #         messagebox.showinfo("DataFrame", "The textbox is empty. Cannot convert to DataFrame.")
-    #         return pd.DataFrame()  # Return an empty DataFrame
-
-    #     try:
-    #         # Split the text into lines
-    #         lines = text_content.split("\n")
-    #         # The first line is assumed to be the header
-    #         headers = lines[0].split()
-    #         # The remaining lines are the data
-    #         data = [line.split() for line in lines[1:]]
-
-    #         # Convert to a DataFrame
-    #         df = pd.DataFrame(data, columns=headers)
-    #         return df
-    #     except Exception as e:
-    #         messagebox.showerror("Error", f"Failed to convert text to DataFrame:\n{e}")
-    #         return pd.DataFrame()  # Return an empty DataFrame in case of error
 
     def get_dataframe_from_display(self):
         """This function converts the text displayed in the output textbox back into a pandas DataFrame.
@@ -825,17 +797,6 @@ class PayrollSpreadsheet(ctk.CTkFrame):
             return pd.DataFrame()
 
         
-
-    def update_progress(self, step, total_steps):
-        """_summary_
-
-        Args:
-            step (_type_): _description_
-            total_steps (_type_): _description_
-        """        
-        # Update the progress bar
-        self.progress_bar.set(step / total_steps)
-        self.update()  # Update the UI
 
 
     def load_excel(self, file_path):
@@ -911,6 +872,8 @@ class PayrollSpreadsheet(ctk.CTkFrame):
         self.option_menu_selection_reset()
 
         self.download_pay_button.pack_forget() # hiding the load pay schedule button
+
+        self.button_frame.pack_forget()
         self.edit_button.pack_forget()  # Hide the Edit button
         self.save_button.pack_forget()  # Hide the Save Changes button
 
@@ -975,14 +938,14 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
         # Download button
         self.download_pay_button.pack_forget()
+
+        self.button_frame.pack_forget()  # Hide the button frame
         self.edit_button.pack_forget()  # Hide the Edit button
         self.save_button.pack_forget()  # Hide the Save Changes button
 
         #Generate Payroll Spreadsheet button
         self.generate_payroll_spreadsheet_button.pack_forget()
-
-        #Reseting the Progress Bar 
-        self.progress_bar.set(0) 
+ 
 
 
     def open_excel(self,file_path):
@@ -1016,9 +979,7 @@ class PayrollSpreadsheet(ctk.CTkFrame):
                 # User canceled the selection
                 self.update_status("Operation canceled. No folder selected.","White")
                 return
-            
-            print("HELOOOO")
-            print(self.input_sheet_two_path)
+
 
             # Generate the payroll spreadsheet
             self.payroll_spreadsheet_path = gps.generate_payroll_spreadsheet(

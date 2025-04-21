@@ -1,8 +1,4 @@
-
-
 # This class is responsible for generating the payroll spreadsheet with both the salaries tab and the staff tab.
-
-
 
 import os
 
@@ -12,6 +8,8 @@ from openpyxl.styles import PatternFill, Font, Alignment, NamedStyle, Border, Si
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.table import Table, TableStyleInfo
+
+#import generate_staff_tab_payroll_spreadsheet as gstps
 
 from datetime import datetime
 import pandas as pd
@@ -120,9 +118,9 @@ def salaries_tab_presets(ws,wb,input_sheet_two_path, params_df):
     for row in range(3, 201):  # Rows 1 to 200
         ws.row_dimensions[row].height = 25
 
-    ws.column_dimensions[openpyxl.utils.get_column_letter(1)].width = 26
-    ws.column_dimensions[openpyxl.utils.get_column_letter(3)].width = 7
-
+    ws.column_dimensions["A"].width = 26
+    ws.column_dimensions["C"].width = 7.14
+    ws.column_dimensions["F"].width = 21.43
     # TITLE SETTINGS
     ws.row_dimensions[3].height= 28.50
     title_cell = ws.cell(row=3, column=1)
@@ -223,8 +221,9 @@ def salaries_tab_presets(ws,wb,input_sheet_two_path, params_df):
     for print_func in print_functions:
             current_row = print_func(ws,wb,input_sheet_two_path,params_df,fringe_df, current_row)
 
+   
 
-      # Format specific columns
+    # Format specific columns
     date_format_columns = ['E', 'F']  # Add columns that need date formatting
     accounting_format_columns = ['G','H', 'I', 'K','L', 'M', 'N', 'O', 'P', 'Q']  # Add columns that need accounting formatting
 
@@ -232,11 +231,17 @@ def salaries_tab_presets(ws,wb,input_sheet_two_path, params_df):
     for col in date_format_columns:
         format_column(ws, col, date_style)
 
+    # Add summation table
+    current_row = print_summation_table(ws, current_row, 12, current_row, params_df)
+
     # Apply accounting formatting
     for col in accounting_format_columns:
         format_column(ws, col, accounting_style)
 
     ws["E7"].number_format = general_style.number_format
+    ws.column_dimensions["A"].width = 26
+    ws.column_dimensions["C"].width = 8
+    ws.column_dimensions["F"].width = 23
 
 
     # Add this line at the end
@@ -385,6 +390,87 @@ def print_header(ws, heading, row):
         apply_color(ws.cell(row=row, column=col_num), "yellow")
 
 
+def print_summation_table(ws, start_row, start_par, end_par, params_df):
+    """Prints the summation table at the end of the worksheet."""
+
+    
+    # Header for the summation section
+    print_header(ws, "SUMMATIONS", start_row)
+    start_row_offset = start_row + 2
+
+    # Create column headers
+    headers = [
+        "FY24 START BASE Pay",
+        "Pay by % Appt",
+        "FRINGE",
+        "TOTAL Pay by % Appt",
+        "ACTUAL PAY",
+        "Employee Type"
+    ]
+
+    # Write headers
+    for col, header in enumerate(headers, start=1):
+        cell = ws.cell(row=start_row_offset, column=col)
+        cell.value = header
+        cell.font = Font(bold=True)
+        apply_color(cell, "cyan")
+
+    data = [
+        (f"=SUM(salaried_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} START BASE Pay])",
+        f"=SUM(salaried_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} Pay by % Appt])",
+        f"=SUM(salaried_employee[FRINGE])",
+        f"=SUM(salaried_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} TOTAL Pay by % Appt])",
+        f"=SUM(salaried_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} ACTUAL PAY])",
+        "Salaried Employees"),
+        (f"=SUM(lump_sum_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} START BASE Pay])",
+        f"=SUM(lump_sum_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} Pay by % Appt])",
+        f"=SUM(lump_sum_employee[FRINGE])",
+        f"=SUM(lump_sum_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} TOTAL Pay by % Appt])",
+        f"=SUM(lump_sum_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} ACTUAL PAY])",
+        "No Fringe Employees"),
+        (f"=SUM(Undergraduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} START BASE Pay])",
+        f"=SUM(Undergraduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} Pay by % Appt])",
+        f"=SUM(Undergraduate_student_employee[FRINGE])",
+        f"=SUM(Undergraduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} TOTAL Pay by % Appt])",
+        f"=SUM(Undergraduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} ACTUAL PAY])",
+        "Undergraduate Staff"),
+        (f"=SUM(Graduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} START BASE Pay])",
+        f"=SUM(Graduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} Pay by % Appt])",
+        f"=SUM(Graduate_student_employee[FRINGE])",
+        f"=SUM(Graduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} TOTAL Pay by % Appt])",
+        f"=SUM(Graduate_student_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} ACTUAL PAY])",
+        "Graduate Staff"),
+        (f"=SUM(other_departments_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} START BASE Pay])",
+        f"=SUM(other_departments_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} Pay by % Appt])",
+        f"=SUM(other_departments_employee[FRINGE])",
+        f"=SUM(other_departments_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} TOTAL Pay by % Appt])",
+        f"=SUM(other_departments_employee[{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} ACTUAL PAY])",
+        "Other Departments Staff"),
+        ("", "", "", "", "", ""),  # Empty row for spacing
+        (f"=SUM(I{start_par}:I{end_par})",
+        f"=SUM(K{start_par}:K{end_par})",
+        f"=SUM(L{start_par}:L{end_par})",
+        f"=SUM(M{start_par}:M{end_par})",
+        f"=SUM(P{start_par}:P{end_par})",
+        "All Salaries Incl Students")
+    ]
+
+    # Write data rows
+    for row_idx, row_data in enumerate(data, start=1):
+        row_num = start_row_offset + row_idx
+        for col_idx, value in enumerate(row_data, start=1):
+            cell = ws.cell(row=row_num, column=col_idx)
+            if row_idx == len(data):  # Total row
+                value = value.format(start_par=start_par, end_par=end_par)
+            cell.value = value
+            cell.number_format = '#,##0.00'
+
+            # Format the last row (totals)
+            if row_idx == len(data):
+                cell.font = Font(bold=True)
+                apply_color(cell, "yellow")
+
+    return row_num + 3
 
 
 
@@ -392,6 +478,8 @@ def generate_staff_tab(wb,input_sheet_two_path,params_df):
 
     ws2 = wb.create_sheet(title=f"{params_df.loc[params_df['Parameters'] == 'year 2 string', 'Values'].iloc[0]} STAFF")
     ws2.sheet_properties.tabColor = "0000CC"
+    #gstps.generate_staff_tab(ws2,input_sheet_two_path,params_df)
+
 
 
 def get_save_name(spreadsheet_name):
@@ -408,7 +496,7 @@ def get_banner_color(curr_year):
 
     Returns:
         String: respective color for year
-    """
+    """ 
     end=int(curr_year[-1])
     if end == 4 or end == 9:
         return "green"
@@ -641,6 +729,24 @@ def restructure_dataframe(df,  params_df, data_ips2):
     
     new_df = pd.DataFrame(columns=new_columns)
 
+    # new_df[new_df.columns[1]] = df[df.columns[1]]
+    # new_df['List Order'] = df[df.columns[2]]
+    # new_df['Name'] = df[df.columns[3]]
+    # new_df['Start Date'] = df[df.columns[8]]
+    # new_df['End Date'] = df[df.columns[9]]
+    # new_df[new_df.columns[6]] = df[df.columns[6]]
+
+    # # Loop through the names and check if they are eligible in colas_table
+    # for idx, row in new_df.iterrows():
+    #     name = row['Name']
+    #     if name in colas_table['Name'].values:  # Check if the name exists in colas_table
+    #         eligible = colas_table.loc[colas_table['Name'] == name, 'Eligible'].iloc[0]
+    #         if eligible:  # If the person is eligible for COLA
+    #             # Apply the 2% COLA to the FY24 END BASE Pay column (or the appropriate column)
+    #             # Use loc to directly assign values
+    #             new_df.loc[idx, '2% COLA / Raise / FR %'] = f"=INDIRECT(ADDRESS(ROW(), COLUMN()-1))*{1+ get_colas(data_ips2)}" # 2% COLA
+
+ # Copying data from original DataFrame
     new_df[new_df.columns[1]] = df[df.columns[1]]
     new_df['List Order'] = df[df.columns[2]]
     new_df['Name'] = df[df.columns[3]]
@@ -648,16 +754,16 @@ def restructure_dataframe(df,  params_df, data_ips2):
     new_df['End Date'] = df[df.columns[9]]
     new_df[new_df.columns[6]] = df[df.columns[6]]
 
-    # Loop through the names and check if they are eligible in colas_table
+    # Set default dates for rows where Name exists but dates are empty
     for idx, row in new_df.iterrows():
-        name = row['Name']
-        if name in colas_table['Name'].values:  # Check if the name exists in colas_table
-            eligible = colas_table.loc[colas_table['Name'] == name, 'Eligible'].iloc[0]
-            if eligible:  # If the person is eligible for COLA
-                # Apply the 2% COLA to the FY24 END BASE Pay column (or the appropriate column)
-                # Use loc to directly assign values
-                new_df.loc[idx, '2% COLA / Raise / FR %'] = f"=INDIRECT(ADDRESS(ROW(), COLUMN()-1))*{1+ get_colas(data_ips2)}" # 2% COLA
-
+        if pd.notna(row['Name']):  # Check if name is not NULL
+            # If Start Date is empty, use E5
+            if pd.isna(row['Start Date']) or row['Start Date'] == '':
+                new_df.loc[idx, 'Start Date'] = '=$E$5'
+            
+            # If End Date is empty, use E6
+            if pd.isna(row['End Date']) or row['End Date'] == '':
+                new_df.loc[idx, 'End Date'] = '=$E$6'
 
 
     

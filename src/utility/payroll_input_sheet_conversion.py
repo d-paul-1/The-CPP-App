@@ -92,8 +92,7 @@ def create_presets(wb):
     title_cell = ws.cell(row=1, column=1)
     title_cell.value = f"INPUT DATA TABLE 2 - ALL INPUT DATA"
     title_cell.font = Font(size=22, bold=True)
-
-    # TIME STAMP SETTINGS
+ 
     time_stamp_cell = ws.cell(row=1, column=6)
     apply_color(time_stamp_cell, "maroon")
     time_stamp_cell.value = "Generated on " + datetime.now().strftime("%b-%d-%Y") + " at " + datetime.now().strftime("%H:%M:%S")
@@ -102,10 +101,11 @@ def create_presets(wb):
 
     # Set width of the first 200 columns and height of the first 200 rows
     for col in range(1, 201):  # Columns A to GR
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 40
-    for row in range(3, 201):  # Rows 1 to 200
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18.00  # Set width to 18.00
+    for row in range(3, 201):  # Rows 1 to 200 
         ws.row_dimensions[row].height = 25
 
+    ws.column_dimensions['H'].width = 40.00  # Set width to 18.0
 
 def print_header(wb, heading, row):
     """
@@ -129,7 +129,7 @@ def print_header(wb, heading, row):
     cell.alignment = heading_alignment
 
     # Color the full row (up to column 30)
-    for col_num in range(1, 41):
+    for col_num in range(1, 47):
         apply_color(ws.cell(row=row, column=col_num), "yellow")
 
 
@@ -158,20 +158,49 @@ def print_updates(wb, start_row):
     # Return the row index after the table and buffer
     return start_row_offset + len(df) + 3  # 3 is the buffer
 
-def print_fringe_table(wb, start_row):
+# def print_fringe_table(wb, start_row):
 
+#     # Printing the Heading 
+#     print_header(wb,"FRINGE TABLE", start_row)
+#     start_row_offset = start_row +2 # this the so that the table doesnt print on the same line as the header
+
+#     # Create the DataFrame with 6 columns and 5 empty rows
+#     df = pd.DataFrame({
+#         "Fiscal Year": [""] * 5,
+#         "Effective Date": [""] * 5,
+#         "Academic Staff":[""] * 5,
+#         "Grad Students (PAs, RAs, TAs)":[""] * 5,
+#         "Student Hourlies":[""] * 5,
+#         "Post-Docs":[""] * 5
+#     })
+
+#     # Write the table to the workbook
+#     write_tables_to_excel(
+#         wb=wb,
+#         sheet_name="USER INPUT",
+#         tables_list=[df],
+#         start_row=start_row_offset,
+#         base_table_name="fringe",
+#         buffer=3
+#     )
+
+#     # Return the row index after the table and buffer
+#     return start_row_offset + len(df) + 3  # 3 is the buffer
+
+def print_fringe_table(wb, start_row):
+    """Print fringe table with first row initialized to 0%"""
     # Printing the Heading 
     print_header(wb,"FRINGE TABLE", start_row)
-    start_row_offset = start_row +2 # this the so that the table doesnt print on the same line as the header
+    start_row_offset = start_row + 2
 
-    # Create the DataFrame with 6 columns and 5 empty rows
+    # Create the DataFrame with first row as 0% for percentage columns
     df = pd.DataFrame({
-        "Fiscal Year": [""] * 5,
-        "Effective Date": [""] * 5,
-        "Academic Staff":[""] * 5,
-        "Grad Students (PAs, RAs, TAs)":[""] * 5,
-        "Student Hourlies":[""] * 5,
-        "Post-Docs":[""] * 5
+        "Fiscal Year": [0] + [""] * 4, 
+        "Effective Date": [0] + [""] * 4, 
+        "Academic Staff": [0] + [""] * 4,           # First row 0, rest empty
+        "Grad Students (PAs, RAs, TAs)": [0] + [""] * 4,  # First row 0, rest empty
+        "Student Hourlies": [0] + [""] * 4,         # First row 0, rest empty
+        "Post-Docs": [0] + [""] * 4                 # First row 0, rest empty
     })
 
     # Write the table to the workbook
@@ -184,8 +213,14 @@ def print_fringe_table(wb, start_row):
         buffer=3
     )
 
-    # Return the row index after the table and buffer
-    return start_row_offset + len(df) + 3  # 3 is the buffer
+    # Format percentage columns
+    ws = wb["USER INPUT"]
+    percentage_columns = ['C', 'D', 'E', 'F']  # Columns for percentages
+    for col in percentage_columns:
+        cell = ws[f"{col}{start_row_offset + 1}"]  # First data row
+        cell.number_format = '0.00%'
+
+    return start_row_offset + len(df) + 3
 
 
 def print_term_leave_table(wb, start_row):
@@ -220,6 +255,17 @@ def print_cpp_employees_and_salary_data(wb, start_row, input_sheet_1_path):
     # Printing the Heading 
     print_header(wb,"CPP EMPLOYEES & SALARY DATA", start_row)
     start_row_offset = start_row +2 # this the so that the table doesnt print on the same line as the header
+
+    # Get the active sheet
+    ws = wb['USER INPUT']
+
+    # Add warning text in red and bold
+    warning_cell = ws.cell(row=start_row + 1, column=1, value="ALL CELLS NEED TO BE FILLED")
+    warning_cell.font = Font(bold=True, color="FF0000")  # FF0000 is red
+    warning_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+
+    
 
     # Initialize an empty list to store DataFrames
     df_list = []
@@ -292,6 +338,15 @@ def print_cpp_employees_and_salary_data(wb, start_row, input_sheet_1_path):
 
 def print_colas(wb, start_row):
 
+    # Get the active sheet
+    ws = wb['USER INPUT']
+
+    # Add warning text in red and bold
+    warning_cell = ws.cell(row=start_row + 1, column=1, value="ALL CELLS NEED TO BE FILLED")
+    warning_cell.font = Font(bold=True, color="FF0000")  # FF0000 is red
+    warning_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+
     # Filter the DataFrame to get only salaried employees
     salaried_employees_df = all_employee_info[all_employee_info['Category'] == 'salaried employees']
 
@@ -337,8 +392,8 @@ def print_colas(wb, start_row):
 
     # Create the DataFrame with 2 columns and 5 empty rows
     df = pd.DataFrame({
-        "Effective Date": [""] * 5,
-        "Percentage ":[""] * 5
+        "Effective Date": [0] + [""] * 4,
+        "Percentage ":[0] + [""] * 4
     })
 
     # Write the table to the workbook
@@ -350,6 +405,13 @@ def print_colas(wb, start_row):
         base_table_name="colas_info",
         buffer=3
     )
+
+        # Format percentage columns
+    ws = wb["USER INPUT"]
+    percentage_columns = ['B']  # Columns for percentages
+    for col in percentage_columns:
+        cell = ws[f"{col}{start_row_offset + 1}"]  # First data row
+        cell.number_format = '0.00%'
 
     # Return the row index after the table and buffer
     return start_row_offset + len(df) + 3  # 3 is the buffer
@@ -467,6 +529,19 @@ def print_funding_strings_and_accounting_salary(wb, start_row, input_sheet_1_pat
         start_col= 17,
         buffer=3
     )
+
+
+    write_tables_to_excel(
+        wb= wb,
+        sheet_name="USER INPUT",
+        tables_list=  df_list,
+        start_row=start_row_offset,
+        base_table_name= "funding_strings_info_copy",
+        start_col= 17 + employees_df.shape[1] + 1,
+        buffer=3
+    )
+
+    ws.column_dimensions[openpyxl.utils.get_column_letter(17 + employees_df.shape[1] + 8)].width = 40.00
 
 
 

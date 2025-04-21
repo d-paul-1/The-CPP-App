@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from tkinter import filedialog, messagebox  # Import filedialog to handle file uploads and messagebox for popups
 
-import utility.payschedule_processing as pp
+import utility.payroll_processing as pp
 import utility.generate_payroll_spreadsheet as gps
 import utility.payroll_input_sheet_conversion as pisc
 
@@ -531,50 +531,125 @@ class PayrollSpreadsheet(ctk.CTkFrame):
 
 
 
-    def download_pay_schedules(self,option_state):
-        """ Funcrion that calls the respective option menu process funtions and handles entry and par period display
+    # def download_pay_schedules(self,option_state):
+    #     """ Funcrion that calls the respective option menu process funtions and handles entry and par period display
 
-        Args:
-            option_state (_type_): option menu selection
-        """
-        successfull = False # variable to check if each option state task ran without errors
+    #     Args:
+    #         option_state (_type_): option menu selection
+    #     """
+    #     successfull = False # variable to check if each option state task ran without errors
 
-        if(option_state==1):
-            year1 = self.automatic_entry_year_1.get()
-            year2 = self.automatic_entry_year_2.get()
+    #     if(option_state==1):
+    #         year1 = self.automatic_entry_year_1.get()
+    #         year2 = self.automatic_entry_year_2.get()
 
-            self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_automatic(year1),self.process_automatic(year2))
-            self.update_status(msg, color)
-            self.display_dataframe(self.pay_schedules_df)
-            self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
-            self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
-            self.pay_periods_label.pack(pady=10)
-            successfull =True
+    #         self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_automatic(year1),self.process_automatic(year2))
+    #         self.update_status(msg, color)
+    #         self.display_dataframe(self.pay_schedules_df)
+    #         self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
+    #         self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
+    #         self.pay_periods_label.pack(pady=10)
+    #         successfull =True
 
-        if(option_state==2):
-            year1 = self.url_entry_year_1.get()
-            year2 = self.url_entry_year_2.get()
+    #     if(option_state==2):
+    #         year1 = self.url_entry_year_1.get()
+    #         year2 = self.url_entry_year_2.get()
 
-            self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_url(year1),self.process_url(year2))
-            self.update_status(msg, color)
-            self.display_dataframe(self.pay_schedules_df)
-            self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
-            self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
-            self.pay_periods_label.pack(pady=10)
-            successfull =True
+    #         self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_url(year1),self.process_url(year2))
+    #         self.update_status(msg, color)
+    #         self.display_dataframe(self.pay_schedules_df)
+    #         self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
+    #         self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
+    #         self.pay_periods_label.pack(pady=10)
+    #         successfull =True
 
-        if(option_state==3):
+    #     if(option_state==3):
 
-            self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_upload(self.year1_pdf),self.process_upload(self.year2_pdf))
-            self.update_status(msg, color)
-            self.display_dataframe(self.pay_schedules_df)
-            self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
-            self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
-            self.pay_periods_label.pack(pady=10)
-            successfull =True
+    #         self.pay_schedules_df , msg, color =pp.merge_dfs(self.process_upload(self.year1_pdf),self.process_upload(self.year2_pdf))
+    #         self.update_status(msg, color)
+    #         self.display_dataframe(self.pay_schedules_df)
+    #         self.pay_periods=pp.get_payperiod(self.pay_schedules_df)
+    #         self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
+    #         self.pay_periods_label.pack(pady=10)
+    #         successfull =True
 
-        if successfull:
-            self.generate_payroll_spreadsheet_button.pack(pady=10)
+    #     if successfull:
+    #         self.generate_payroll_spreadsheet_button.pack(pady=10)
+
+    def download_pay_schedules(self, option_state):
+        """Function that handles pay schedule downloads with fallback to year 1 data"""
+        successful = False
+
+        try:
+            if option_state == 1:
+                year1 = self.automatic_entry_year_1.get()
+                year2 = self.automatic_entry_year_2.get()
+
+                df1 = self.process_automatic(year1)
+                df2 = self.process_automatic(year2)
+
+                if df1 is None and df2 is None:
+                    self.update_status("Neither year's pay schedules are available", "red")
+                    return
+
+                # If year 2 is unavailable, use year 1's data for both
+                if df2 is None:
+                    self.pay_schedules_df, msg, color = pp.merge_dfs(df1, df1)
+                    self.update_status(f"Using {year1} data for both years as {year2} is unavailable", "yellow")
+                else:
+                    self.pay_schedules_df, msg, color = pp.merge_dfs(df1, df2)
+                    self.update_status(msg, color)
+
+                successful = True
+
+            elif option_state == 2:
+                year1 = self.url_entry_year_1.get()
+                year2 = self.url_entry_year_2.get()
+
+                df1 = self.process_url(year1)
+                df2 = self.process_url(year2)
+
+                if df1 is None and df2 is None:
+                    self.update_status("Neither year's pay schedules are available", "red")
+                    return
+
+                # If year 2 is unavailable, use year 1's data for both
+                if df2 is None:
+                    self.pay_schedules_df, msg, color = pp.merge_dfs(df1, df1)
+                    self.update_status(f"Using {year1} data for both years as {year2} is unavailable", "yellow")
+                else:
+                    self.pay_schedules_df, msg, color = pp.merge_dfs(df1, df2)
+                    self.update_status(msg, color)
+
+                successful = True
+
+            elif option_state == 3:
+                df1 = self.process_upload(self.year1_pdf)
+                df2 = self.process_upload(self.year2_pdf)
+
+                if df1 is None and df2 is None:
+                    self.update_status("Neither uploaded file's pay schedules are available", "red")
+                    return
+
+                # If year 2 is unavailable, use year 1's data for both
+                if df2 is None:
+                    self.pay_schedules_df, msg, color = pp.merge_dfs(df1, df1)
+                    self.update_status("Using first year's data for both years as second year is unavailable", "yellow")
+                else:
+                    self.pay_schedules_df, msg, color = pp.merge_dfs(df1, df2)
+                    self.update_status(msg, color)
+
+                successful = True
+
+            if successful:
+                self.display_dataframe(self.pay_schedules_df)
+                self.pay_periods = pp.get_payperiod(self.pay_schedules_df)
+                self.pay_periods_label.configure(text=f"Number of pay periods: {self.pay_periods}")
+                self.pay_periods_label.pack(pady=10)
+                self.generate_payroll_spreadsheet_button.pack(pady=10)
+
+        except Exception as e:
+            self.update_status(f"Error processing pay schedules: {str(e)}", "red")
 
 
 

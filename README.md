@@ -27,15 +27,15 @@ This application streamlines the generation of payroll spreadsheets, manages fun
 **Note:** Output documents are not shared due to privacy and confidentiality reasons.
 
 ### Login Page
-![Login Page](images/login.png)
+![Login Page](assets/login.png)
 
 ### Main Menu  
 Access all utilities from a central hub.  
-![Menu Page](images/menu.png)
+![Menu Page](assets/menu.png)
 
 ### Payroll Dashboard  
 Streamline payroll creation and manage funding strings.  
-![Payroll Dashboard](images/payroll_dashboard.png)
+![Payroll Dashboard](assets/dashboard.png)
 
 ---
 
